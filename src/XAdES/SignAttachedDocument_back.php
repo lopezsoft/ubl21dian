@@ -7,10 +7,11 @@ use DOMDocument;
 use Carbon\Carbon;
 use Stenfrank\UBL21dian\Sign;
 
+
 /**
  * Sign Invoice.
  */
-class SignInvoice extends Sign
+class SignAttachedDocument extends Sign
 {
     /**
      * XMLDSIG.
@@ -109,15 +110,15 @@ class SignInvoice extends Sign
      * @var array
      */
     public $ns = [
-        'xmlns:cac' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
-        'xmlns:ext' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
-        'xmlns:cbc' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
-        'xmlns:sts' => 'http://www.dian.gov.co/contratos/facturaelectronica/v1/Structures',
-        'xmlns' => 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
-        'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
-        'xmlns:xades141' => 'http://uri.etsi.org/01903/v1.4.1#',
-        'xmlns:xades' => 'http://uri.etsi.org/01903/v1.3.2#',
-        'xmlns:ds' => self::XMLDSIG,
+        'xmlns'             => 'urn:oasis:names:specification:ubl:schema:xsd:AttachedDocument-2',
+        'xmlns:ds'          => 'http://www.w3.org/2000/09/xmldsig#',
+        'xmlns:cac'         => 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+        'xmlns:cbc'         => 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+        'xmlns:ccts'        => 'urn:un:unece:uncefact:data:specification:CoreComponentTypeSchemaModule:2',
+        'xmlns:ext'         => 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
+        'xmlns:xades'       => 'http://uri.etsi.org/01903/v1.3.2#',
+        'xmlns:xades141'    => 'http://uri.etsi.org/01903/v1.4.1#',
+        'xmlns:ds'          => SignInvoice::XMLDSIG,
     ];
 
     /**
@@ -174,7 +175,7 @@ class SignInvoice extends Sign
         // Digest value xml clean
         $this->digestValueXML();
 
-        $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(1);
+        $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(0);
 
         $this->signature = $this->domDocument->createElement('ds:Signature');
         $this->signature->setAttribute('xmlns:ds', self::XMLDSIG);
@@ -246,31 +247,6 @@ class SignInvoice extends Sign
 
         $this->X509SerialNumberCert = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($this->certs['cert'])['serialNumber']);
         $this->issuerSerialCert->appendChild($this->X509SerialNumberCert);
-
-        // Extracerts
-        // foreach ($this->certs['extracerts'] as $key => $extracert) {
-        //     $this->extracerts['Cert'][$key] = $this->domDocument->createElement('xades:Cert');
-        //     $this->signingCertificate->appendChild($this->extracerts['Cert'][$key]);
-
-        //     $this->extracerts['CertDigest'][$key] = $this->domDocument->createElement('xades:CertDigest');
-        //     $this->extracerts['Cert'][$key]->appendChild($this->extracerts['CertDigest'][$key]);
-
-        //     $this->extracerts['DigestMethod'][$key] = $this->domDocument->createElement('ds:DigestMethod');
-        //     $this->extracerts['DigestMethod'][$key]->setAttribute('Algorithm', $this->algorithm['algorithm']);
-        //     $this->extracerts['CertDigest'][$key]->appendChild($this->extracerts['DigestMethod'][$key]);
-
-        //     $this->extracerts['DigestValue'][$key] = $this->domDocument->createElement('ds:DigestValue', base64_encode(openssl_x509_fingerprint($extracert, $this->algorithm['hash'], true)));
-        //     $this->extracerts['CertDigest'][$key]->appendChild($this->extracerts['DigestValue'][$key]);
-
-        //     $this->extracerts['IssuerSerial'][$key] = $this->domDocument->createElement('xades:IssuerSerial');
-        //     $this->extracerts['Cert'][$key]->appendChild($this->extracerts['IssuerSerial'][$key]);
-
-        //     $this->extracerts['X509IssuerName'][$key] = $this->domDocument->createElement('ds:X509IssuerName', $this->joinArray(array_reverse(openssl_x509_parse($extracert)['issuer']), false, ','));
-        //     $this->extracerts['IssuerSerial'][$key]->appendChild($this->extracerts['X509IssuerName'][$key]);
-
-        //     $this->extracerts['X509SerialNumber'][$key] = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($extracert)['serialNumber']);
-        //     $this->extracerts['IssuerSerial'][$key]->appendChild($this->extracerts['X509SerialNumber'][$key]);
-        // }
 
         $this->signaturePolicyIdentifier = $this->domDocument->createElement('xades:SignaturePolicyIdentifier');
         $this->signedSignatureProperties->appendChild($this->signaturePolicyIdentifier);
@@ -409,10 +385,6 @@ class SignInvoice extends Sign
         if (!is_null($this->technicalKey)) {
             $this->cufe();
         }
-
-        $qr             = ($this->getTag('ProfileExecutionID', 0)->nodeValue == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
-        $XmlDocumentKey = $this->getTag('UUID', 0)->nodeValue;
-        $this->getTag('QRCode', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$XmlDocumentKey}";
     }
 
     /**

@@ -10,7 +10,7 @@ use Stenfrank\UBL21dian\Sign;
 /**
  * Sign Invoice.
  */
-class SignInvoice extends Sign
+class SignInvoice_BACK extends Sign
 {
     /**
      * XMLDSIG.
@@ -247,31 +247,6 @@ class SignInvoice extends Sign
         $this->X509SerialNumberCert = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($this->certs['cert'])['serialNumber']);
         $this->issuerSerialCert->appendChild($this->X509SerialNumberCert);
 
-        // Extracerts
-        // foreach ($this->certs['extracerts'] as $key => $extracert) {
-        //     $this->extracerts['Cert'][$key] = $this->domDocument->createElement('xades:Cert');
-        //     $this->signingCertificate->appendChild($this->extracerts['Cert'][$key]);
-
-        //     $this->extracerts['CertDigest'][$key] = $this->domDocument->createElement('xades:CertDigest');
-        //     $this->extracerts['Cert'][$key]->appendChild($this->extracerts['CertDigest'][$key]);
-
-        //     $this->extracerts['DigestMethod'][$key] = $this->domDocument->createElement('ds:DigestMethod');
-        //     $this->extracerts['DigestMethod'][$key]->setAttribute('Algorithm', $this->algorithm['algorithm']);
-        //     $this->extracerts['CertDigest'][$key]->appendChild($this->extracerts['DigestMethod'][$key]);
-
-        //     $this->extracerts['DigestValue'][$key] = $this->domDocument->createElement('ds:DigestValue', base64_encode(openssl_x509_fingerprint($extracert, $this->algorithm['hash'], true)));
-        //     $this->extracerts['CertDigest'][$key]->appendChild($this->extracerts['DigestValue'][$key]);
-
-        //     $this->extracerts['IssuerSerial'][$key] = $this->domDocument->createElement('xades:IssuerSerial');
-        //     $this->extracerts['Cert'][$key]->appendChild($this->extracerts['IssuerSerial'][$key]);
-
-        //     $this->extracerts['X509IssuerName'][$key] = $this->domDocument->createElement('ds:X509IssuerName', $this->joinArray(array_reverse(openssl_x509_parse($extracert)['issuer']), false, ','));
-        //     $this->extracerts['IssuerSerial'][$key]->appendChild($this->extracerts['X509IssuerName'][$key]);
-
-        //     $this->extracerts['X509SerialNumber'][$key] = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($extracert)['serialNumber']);
-        //     $this->extracerts['IssuerSerial'][$key]->appendChild($this->extracerts['X509SerialNumber'][$key]);
-        // }
-
         $this->signaturePolicyIdentifier = $this->domDocument->createElement('xades:SignaturePolicyIdentifier');
         $this->signedSignatureProperties->appendChild($this->signaturePolicyIdentifier);
 
@@ -403,18 +378,38 @@ class SignInvoice extends Sign
             $this->domXPath->registerNameSpace($key, $value);
         }
 
+        $codeValue  = $this->getQuery('cbc:InvoiceTypeCode', false)->nodeValue ?? null;
         if ((!is_null($this->pin)) && (is_null($this->technicalKey))) {
-            $this->cude();
+            if($codeValue === '05'){
+                $this->cuds();
+            }else{
+                $this->cude();
+            }
         }
         if (!is_null($this->technicalKey)) {
             $this->cufe();
         }
-
         $qr             = ($this->getTag('ProfileExecutionID', 0)->nodeValue == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
         $XmlDocumentKey = $this->getTag('UUID', 0)->nodeValue;
         $this->getTag('QRCode', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$XmlDocumentKey}";
     }
 
+    /**
+     * CUDS.
+     */
+    private function cuds()
+    {
+        $NumDS  = $this->getTag('ID', 0)->nodeValue;
+        $FecDS  = $this->getTag('IssueDate', 0)->nodeValue;
+        $HorDS  = $this->getTag('IssueTime', 0)->nodeValue;
+        $ValDS  = $this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue;
+        $ValImp = $this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? 0;
+        $ValTot = $this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue;
+        $NumSNO = $this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue;
+        $NITABS = $this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue;
+        $val    = "{$NumDS}{$FecDS}{$HorDS}{$ValDS}01{$ValImp}{$ValTot}{$NumSNO}{$NITABS}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}";
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $val);
+    }
     /**
      * CUFE.
      */

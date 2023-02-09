@@ -8,9 +8,9 @@ use Carbon\Carbon;
 use Stenfrank\UBL21dian\Sign;
 
 /**
- * Sign DocumentSupport.
+ * Sign Invoice.
  */
-class SignDocumentSupport extends Sign
+class SignInvoice_document_back extends Sign
 {
     /**
      * XMLDSIG.
@@ -96,11 +96,11 @@ class SignDocumentSupport extends Sign
      * @var array
      */
     protected $ids = [
-        'SignedPropertiesID'    => 'xmldsig',
-        'SignatureValueID'      => 'xmldsig',
-        'SignatureID'           => 'xmldsig',
-        'KeyInfoID'             => 'xmldsig',
-        'ReferenceID'           => 'xmldsig',
+        'SignedPropertiesID' => 'SIGNED-PROPS',
+        'SignatureValueID' => 'SIG-VALUE',
+        'SignatureID' => 'MATIAS-API',
+        'KeyInfoID' => 'KEY-INFO',
+        'ReferenceID' => 'REF',
     ];
 
     /**
@@ -170,7 +170,7 @@ class SignDocumentSupport extends Sign
         $this->domDocument = new DOMDocument($this->version, $this->encoding);
         $this->domDocument->loadXML($this->xmlString);
         $this->GuardarEn = preg_replace("/[\r\n|\n|\r]+/", "", $this->GuardarEn);
-        if ($this->GuardarEn) {
+        if ($this->GuardarEn){
             file_put_contents($this->GuardarEn, $this->xmlString);
         }
 
@@ -180,10 +180,10 @@ class SignDocumentSupport extends Sign
         $this->softwareSecurityCode();
 
         // UUID
-        if (strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>'))
+        if(strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>'))
             $this->setCUNE();
         else
-            if (strpos($this->xmlString, '</ApplicationResponse>'))
+            if(strpos($this->xmlString, '</ApplicationResponse>'))
                 $this->setCUDEEVENT();
             else
                 $this->setUUID();
@@ -191,10 +191,10 @@ class SignDocumentSupport extends Sign
         // Digest value xml clean
         $this->digestValueXML();
 
-        if (strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>') || strpos($this->xmlString, '</AttachedDocument>'))
+        if(strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>') || strpos($this->xmlString, '</AttachedDocument>'))
             $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(0);
-        else {
-            if (strpos($this->xmlString, 'www.minsalud.gov.co'))
+        else{
+            if(strpos($this->xmlString, 'www.minsalud.gov.co'))
                 $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(2);
             else
                 $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(1);
@@ -272,7 +272,7 @@ class SignDocumentSupport extends Sign
         $this->issuerSerialCert->appendChild($this->X509SerialNumberCert);
 
         // Extracerts
-        if (!empty($this->certs['extracerts'])) {
+        if (!empty($this->certs['extracerts'])){
             foreach ($this->certs['extracerts'] as $key => $extracert) {
                 $this->extracerts['Cert'][$key] = $this->domDocument->createElement('xades:Cert');
                 $this->signingCertificate->appendChild($this->extracerts['Cert'][$key]);
@@ -361,24 +361,26 @@ class SignDocumentSupport extends Sign
         $this->domDocumentReferenceKeyInfoC14N->loadXML(str_replace('<ds:KeyInfo ', "<ds:KeyInfo {$this->joinArray($this->ns)} ", $this->domDocument->saveXML($this->keyInfo)));
 
         //=========================== PARA PODER CANONIZAR NOMINA ELECTRONICA Y NOMINA DE AJUSTE ====================================================\\
-        if (strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+        if(strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
             $CopyOfdomDocumentReferenceKeyInfoC14N = $this->domDocumentReferenceKeyInfoC14N->saveXML();
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
             $value = str_replace($SearchNS, $ReplacementNS, $this->domDocumentReferenceKeyInfoC14N->saveXML());
             $this->domDocumentReferenceKeyInfoC14N->loadXML($value);
 
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
@@ -386,7 +388,8 @@ class SignDocumentSupport extends Sign
             $this->domDocumentReferenceKeyInfoC14N->loadXML($CopyOfdomDocumentReferenceKeyInfoC14N);
 
             $this->DigestValueKeyInfo = base64_encode(hash($this->algorithm['hash'], $value, true));
-        } //=================================================================== FIN ==================================================================\\
+        }
+        //=================================================================== FIN ==================================================================\\
         else
             $this->DigestValueKeyInfo = base64_encode(hash($this->algorithm['hash'], $this->domDocumentReferenceKeyInfoC14N->C14N(), true));
 
@@ -413,24 +416,26 @@ class SignDocumentSupport extends Sign
         $this->domDocumentSignedPropertiesC14N->loadXML(str_replace('<xades:SignedProperties ', "<xades:SignedProperties {$this->joinArray($this->ns)} ", $this->domDocument->saveXML($this->signedProperties)));
 
         //=========================== PARA PODER CANONIZAR NOMINA ELECTRONICA Y NOMINA DE AJUSTE ====================================================\\
-        if (strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+        if(strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
             $CopyOfdomDocumentSignedPropertiesC14N = $this->domDocumentSignedPropertiesC14N->saveXML();
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
             $value = str_replace($SearchNS, $ReplacementNS, $this->domDocumentSignedPropertiesC14N->saveXML());
             $this->domDocumentSignedPropertiesC14N->loadXML($value);
 
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
@@ -438,7 +443,8 @@ class SignDocumentSupport extends Sign
             $this->domDocumentSignedPropertiesC14N->loadXML($CopyOfdomDocumentSignedPropertiesC14N);
 
             $this->DigestValueSignedProperties = base64_encode(hash($this->algorithm['hash'], $value, true));
-        } //=================================================================== FIN ==================================================================\\
+        }
+        //=================================================================== FIN ==================================================================\\
         else
             $this->DigestValueSignedProperties = base64_encode(hash($this->algorithm['hash'], $this->domDocumentSignedPropertiesC14N->C14N(), true));
 
@@ -450,24 +456,26 @@ class SignDocumentSupport extends Sign
         $this->domDocumentSignatureValueC14N->loadXML(str_replace('<ds:SignedInfo', "<ds:SignedInfo {$this->joinArray($this->ns)} ", $this->domDocument->saveXML($this->signedInfo)));
 
         //=========================== PARA PODER CANONIZAR NOMINA ELECTRONICA Y NOMINA DE AJUSTE ====================================================\\
-        if (strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+        if(strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
             $CopyOfdomDocumentSignatureValueC14N = $this->domDocumentSignatureValueC14N->saveXML();
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
             $value = str_replace($SearchNS, $ReplacementNS, $this->domDocumentSignatureValueC14N->saveXML());
             $this->domDocumentSignatureValueC14N->loadXML($value);
 
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
@@ -475,7 +483,8 @@ class SignDocumentSupport extends Sign
             $this->domDocumentSignatureValueC14N->loadXML($CopyOfdomDocumentSignatureValueC14N);
 
             openssl_sign($value, $this->resultSignature, $this->certs['pkey'], $this->algorithm['sign']);
-        } //=================================================================== FIN ==================================================================\\
+        }
+        //=================================================================== FIN ==================================================================\\
         else
             openssl_sign($this->domDocumentSignatureValueC14N->C14N(), $this->resultSignature, $this->certs['pkey'], $this->algorithm['sign']);
 
@@ -488,56 +497,60 @@ class SignDocumentSupport extends Sign
     private function digestValueXML()
     {
         //=========================== PARA PODER CANONIZAR NOMINA ELECTRONICA Y NOMINA DE AJUSTE ====================================================\\
-        if (strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+        if(strpos($this->xmlString, '</NominaIndividual>') || strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
             $CopyOfdomDocument = $this->domDocument->saveXML();
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
-            $value = str_replace($SearchNS, $ReplacementNS, $this->domDocument->saveXML());
+            $value = str_replace($SearchNS,$ReplacementNS,$this->domDocument->saveXML());
             $this->domDocument->loadXML($value);
 
-            if (strpos($this->xmlString, '</NominaIndividual>')) {
+            if(strpos($this->xmlString, '</NominaIndividual>')){
                 $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividual"';
                 $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividual"';
-            } else
-                if (strpos($this->xmlString, '</NominaIndividualDeAjuste>')) {
+            }
+            else
+                if(strpos($this->xmlString, '</NominaIndividualDeAjuste>')){
                     $SearchNS = 'xmlns="urn:dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                     $ReplacementNS = 'xmlns="dian:gov:co:facturaelectronica:NominaIndividualDeAjuste"';
                 }
-            $value = str_replace($SearchNS, $ReplacementNS, $this->domDocument->C14N());
+            $value = str_replace($SearchNS,$ReplacementNS,$this->domDocument->C14N());
             $this->domDocument->loadXML($CopyOfdomDocument);
 
             $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $value, true));
-        } //=================================================================== FIN ==================================================================\\
+        }
+        //=================================================================== FIN ==================================================================\\
         else
-            if (strpos($this->xmlString, '</AttachedDocument>')) {
+            if(strpos($this->xmlString, '</AttachedDocument>')){
                 $CopyOfdomDocument = $this->domDocument->saveXML();
 
                 $SearchNS = $this->ValueXML($this->domDocument->saveXML(), "/AttachedDocument/cac:Attachment/cac:ExternalReference/cbc:Description/");
-                $ReplacementNS = $this->ValueXML(" - " . $this->domDocument->C14N(), "/AttachedDocument/cac:Attachment/cac:ExternalReference/cbc:Description/");
+                $ReplacementNS = $this->ValueXML(" - ".$this->domDocument->C14N(), "/AttachedDocument/cac:Attachment/cac:ExternalReference/cbc:Description/");
 
                 $SearchNS2 = $this->ValueXML($this->domDocument->saveXML(), "/AttachedDocument/cac:ParentDocumentLineReference/cac:DocumentReference/cac:Attachment/cbc:Description/");
-                $ReplacementNS2 = $this->ValueXML(" - " . $this->domDocument->C14N(), "/AttachedDocument/cac:ParentDocumentLineReference/cac:DocumentReference/cac:Attachment/cbc:Description/");
+                $ReplacementNS2 = $this->ValueXML(" - ".$this->domDocument->C14N(), "/AttachedDocument/cac:ParentDocumentLineReference/cac:DocumentReference/cac:Attachment/cbc:Description/");
 
-                $value = str_replace($SearchNS2, $ReplacementNS2, str_replace($SearchNS, $ReplacementNS, $this->domDocument->saveXML()));
+                $value = str_replace($SearchNS2,$ReplacementNS2,str_replace($SearchNS,$ReplacementNS,$this->domDocument->saveXML()));
 
                 $this->domDocument->loadXML($value);
 
                 $SearchNS = $this->ValueXML($this->domDocument->C14N(), "/AttachedDocument/cac:Attachment/cac:ExternalReference/cbc:Description/");
-                $ReplacementNS = $this->ValueXML(" - " . $this->domDocument->saveXML(), "/AttachedDocument/cac:Attachment/cac:ExternalReference/cbc:Description/");
+                $ReplacementNS = $this->ValueXML(" - ".$this->domDocument->saveXML(), "/AttachedDocument/cac:Attachment/cac:ExternalReference/cbc:Description/");
 
                 $SearchNS2 = $this->ValueXML($this->domDocument->C14N(), "/AttachedDocument/cac:ParentDocumentLineReference/cac:DocumentReference/cac:Attachment/cbc:Description/");
-                $ReplacementNS2 = $this->ValueXML(" - " . $this->domDocument->saveXML(), "/AttachedDocument/cac:ParentDocumentLineReference/cac:DocumentReference/cac:Attachment/cbc:Description/");
+                $ReplacementNS2 = $this->ValueXML(" - ".$this->domDocument->saveXML(), "/AttachedDocument/cac:ParentDocumentLineReference/cac:DocumentReference/cac:Attachment/cbc:Description/");
 
-                $value = str_replace($SearchNS2, $ReplacementNS2, str_replace($SearchNS, $ReplacementNS, $this->domDocument->C14N()));
+                $value = str_replace($SearchNS2,$ReplacementNS2,str_replace($SearchNS,$ReplacementNS,$this->domDocument->C14N()));
                 $this->domDocument->loadXML($CopyOfdomDocument);
                 $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $value, true));
-            } else
+            }
+            else
                 $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $this->domDocument->C14N(), true));
     }
 
@@ -549,9 +562,10 @@ class SignDocumentSupport extends Sign
         if (is_null($this->softwareID) || is_null($this->pin)) {
             return;
         }
-        if ($this->valueXML($this->domXPath->document->saveXML(), "/NominaIndividual/ProveedorXML/") || $this->valueXML($this->domXPath->document->saveXML(), "/NominaIndividualDeAjuste/ProveedorXML/")) {
+        if($this->valueXML($this->domXPath->document->saveXML(), "/NominaIndividual/ProveedorXML/") || $this->valueXML($this->domXPath->document->saveXML(), "/NominaIndividualDeAjuste/ProveedorXML/")){
             $this->getTag('ProveedorXML', 0, 'SoftwareSC', hash('sha384', "{$this->softwareID}{$this->pin}{$this->getTag('NumeroSecuenciaXML', 0, 'Numero')}"));
-        } else
+        }
+        else
             $this->getTag('SoftwareSecurityCode', 0)->nodeValue = hash('sha384', "{$this->softwareID}{$this->pin}{$this->getTag('ID', 0)->nodeValue}");
     }
 
@@ -566,7 +580,7 @@ class SignDocumentSupport extends Sign
         }
 
         if ((!is_null($this->pin)) && (is_null($this->technicalKey))) {
-            if (strpos($this->xmlString, 'DIAN 2.1: documento soporte en adquisiciones efectuadas a no obligados a facturar.') || strpos($this->xmlString, 'DIAN 2.1: Nota de ajuste al documento soporte en adquisiciones efectuadas a sujetos no obligados a expedir factura o documento equivalente'))
+            if(strpos($this->xmlString, 'DIAN 2.1: documento soporte en adquisiciones efectuadas a no obligados a facturar.') || strpos($this->xmlString, 'DIAN 2.1: Nota de ajuste al documento soporte en adquisiciones efectuadas a sujetos no obligados a expedir factura o documento equivalente'))
                 $this->cuds();
             else
                 $this->cude();
@@ -575,7 +589,7 @@ class SignDocumentSupport extends Sign
             $this->cufe();
         }
 
-        $qr = ($this->getTag('ProfileExecutionID', 0)->nodeValue == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
+        $qr             = ($this->getTag('ProfileExecutionID', 0)->nodeValue == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
         $XmlDocumentKey = $this->getTag('UUID', 0)->nodeValue;
         $this->getTag('QRCode', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$XmlDocumentKey}";
     }
@@ -611,14 +625,14 @@ class SignDocumentSupport extends Sign
      */
     private function cuds()
     {
-        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
         $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUDS(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
     public function ConsultarCUDS()
     {
         if (!is_null($this->pin))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
     }
 
     /**
@@ -626,14 +640,14 @@ class SignDocumentSupport extends Sign
      */
     private function cufe()
     {
-        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '04' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '03' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
         $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUFE(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
     public function ConsultarCUFE()
     {
         if (!is_null($this->technicalKey))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '04' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '03' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
     }
 
     /**
@@ -641,14 +655,14 @@ class SignDocumentSupport extends Sign
      */
     private function cude()
     {
-        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '04' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '03' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
         $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUDE(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
     public function ConsultarCUDE()
     {
         if (!is_null($this->pin))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '04' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '03' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
     }
 
     /**
@@ -678,18 +692,20 @@ class SignDocumentSupport extends Sign
     private function cune()
     {
         $xmlStr = $this->domXPath->document->saveXML();
-        if (strpos($xmlStr, '</NominaIndividual>')) {
+        if(strpos($xmlStr, '</NominaIndividual>')){
             $this->getTag('InformacionGeneral', 0, 'CUNE', hash('sha384', "{$this->getTag('NumeroSecuenciaXML', 0, 'Numero')}{$this->getTag('InformacionGeneral', 0, 'FechaGen')}{$this->getTag('InformacionGeneral', 0, 'HoraGen')}{$this->getTag('DevengadosTotal', 0)->nodeValue}{$this->getTag('DeduccionesTotal', 0)->nodeValue}{$this->getTag('ComprobanteTotal', 0)->nodeValue}{$this->getTag('ProveedorXML', 0, 'NIT')}{$this->getTag('Trabajador', 0, 'NumeroDocumento')}{$this->getTag('InformacionGeneral', 0, 'TipoXML')}{$this->pin}{$this->getTag('InformacionGeneral', 0, 'Ambiente')}"));
             $this->getTag('CodigoQR', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUNE(), $this->getTag('CodigoQR', 0)->nodeValue);
-        } else {
-            if (strpos($xmlStr, '</Eliminar>')) {
-                $this->getTag('InformacionGeneral', 0, 'CUNE', hash('sha384', "{$this->getTag('NumeroSecuenciaXML', 0, 'Numero')}{$this->getTag('InformacionGeneral', 0, 'FechaGen')}{$this->getTag('InformacionGeneral', 0, 'HoraGen')}" . "0.000.000.00" . "{$this->getTag('Empleador', 0, 'NIT')}" . "0" . "{$this->getTag('InformacionGeneral', 0, 'TipoXML')}{$this->pin}{$this->getTag('InformacionGeneral', 0, 'Ambiente')}"));
+        }
+        else{
+            if(strpos($xmlStr, '</Eliminar>')){
+                $this->getTag('InformacionGeneral', 0, 'CUNE', hash('sha384', "{$this->getTag('NumeroSecuenciaXML', 0, 'Numero')}{$this->getTag('InformacionGeneral', 0, 'FechaGen')}{$this->getTag('InformacionGeneral', 0, 'HoraGen')}"."0.000.000.00"."{$this->getTag('Empleador', 0, 'NIT')}"."0"."{$this->getTag('InformacionGeneral', 0, 'TipoXML')}{$this->pin}{$this->getTag('InformacionGeneral', 0, 'Ambiente')}"));
                 $this->getTag('CodigoQR', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUNE(), $this->getTag('CodigoQR', 0)->nodeValue);
-            } else {
+            }
+            else{
                 $this->getTag('InformacionGeneral', 0, 'CUNE', hash('sha384', "{$this->getTag('NumeroSecuenciaXML', 0, 'Numero')}{$this->getTag('InformacionGeneral', 0, 'FechaGen')}{$this->getTag('InformacionGeneral', 0, 'HoraGen')}{$this->getTag('DevengadosTotal', 0)->nodeValue}{$this->getTag('DeduccionesTotal', 0)->nodeValue}{$this->getTag('ComprobanteTotal', 0)->nodeValue}{$this->getTag('Empleador', 0, 'NIT')}{$this->getTag('Trabajador', 0, 'NumeroDocumento')}{$this->getTag('InformacionGeneral', 0, 'TipoXML')}{$this->pin}{$this->getTag('InformacionGeneral', 0, 'Ambiente')}"));
                 $this->getTag('CodigoQR', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUNE(), $this->getTag('CodigoQR', 0)->nodeValue);
             }
-        }
+       }
     }
 
     public function ConsultarCUNE()
