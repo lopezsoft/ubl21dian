@@ -1,9 +1,9 @@
 <?php
 
-namespace Stenfrank\Tests;
+namespace Lopezsoft\Tests;
 
 use DOMDocument;
-use Stenfrank\UBL21dian\XAdES\SignInvoice;
+use Lopezsoft\UBL21dian\XAdES\SignInvoice;
 
 /**
  * Signatures Bills Test.

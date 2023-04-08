@@ -1,5 +1,5 @@
 {
-    "name": "lopezsoft/ubl21dian",
+    "name": "Lopezsoft/ubl21dian",
     "type": "library",
     "description": "Core for electronic invoicing pre-validation - DIAN UBL 2.1",
     "homepage": "https://matias-api.com",
@@ -39,12 +39,12 @@
     },
     "autoload": {
         "psr-4": {
-            "lopezsoft\\UBL21dian\\": "src/"
+            "Lopezsoft\\UBL21dian\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "lopezsoft\\Tests\\": "tests/"
+            "Lopezsoft\\Tests\\": "tests/"
         }
     }
 }

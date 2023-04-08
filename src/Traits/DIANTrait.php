@@ -1,6 +1,6 @@
 <?php
 
-namespace Stenfrank\UBL21dian\Traits;
+namespace Lopezsoft\UBL21dian\Traits;
 
 use Exception;
 

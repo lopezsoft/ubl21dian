@@ -1,11 +1,11 @@
 <?php
 
-namespace Stenfrank\UBL21dian\XAdES;
+namespace Lopezsoft\UBL21dian\XAdES;
 
 use DOMXPath;
 use DOMDocument;
 use Carbon\Carbon;
-use Stenfrank\UBL21dian\Sign;
+use Lopezsoft\UBL21dian\Sign;
 
 /**
  * Sign DocumentSupport.

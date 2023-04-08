@@ -1,6 +1,6 @@
 <?php
 
-namespace Stenfrank\Tests;
+namespace Lopezsoft\Tests;
 
 /**
  * Test case.

@@ -1,9 +1,9 @@
 <?php
 
-namespace Stenfrank\Tests;
+namespace Lopezsoft\Tests;
 
 use DOMDocument;
-use Stenfrank\UBL21dian\BinarySecurityToken\SOAP;
+use lopezsoft\UBL21dian\BinarySecurityToken\SOAP;
 
 /**
  * Sign soap test.
