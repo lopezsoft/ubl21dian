@@ -39,12 +39,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Stenfrank\\UBL21dian\\": "src/"
+            "lopezsoft\\UBL21dian\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Stenfrank\\Tests\\": "tests/"
+            "lopezsoft\\Tests\\": "tests/"
         }
     }
 }
