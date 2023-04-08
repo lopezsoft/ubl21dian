@@ -11,13 +11,8 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 * 2.0: Contains valid proofs for the sending of debit notes and document name standard.
 
 # Resources
-* [Documentation](https://soenac.com/ubl21-dian)
+* [Documentation](https://api.matias-api.com.co/api/documentation)
 
 ## Authors
 
-* **Frank Aguirre** - *Maintainer* - [Stenfrank](https://github.com/Stenfrank/)
-
-## Donation
-If this library help you reduce time to develop, you can give me a cup of coffee :smiley:.
-
-[![paypal](https://www.paypalobjects.com/en_US/i/btn/btn_donateCC_LG.gif)](https://www.paypal.me/stenfrank/1?locale.x=es_XC)
+* **Frank Aguirre** - *Maintainer* - [Lewis Lopez](https://github.com/lopezsoft/)

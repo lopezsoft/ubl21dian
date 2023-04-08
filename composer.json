@@ -1,8 +1,8 @@
 {
-    "name": "stenfrank/ubl21dian",
+    "name": "lopezsoft/ubl21dian",
     "type": "library",
     "description": "Core for electronic invoicing pre-validation - DIAN UBL 2.1",
-    "homepage": "https://soenac.com",
+    "homepage": "https://matias-api.com",
     "keywords": [
         "soap dian",
         "web service",
@@ -12,15 +12,15 @@
         "core"
     ],
     "support": {
-        "issues": "https://github.com/Stenfrank/ubl21dian/issues",
-        "source": "https://github.com/Stenfrank/ubl21dian"
+        "issues": "https://github.com/lopezsoft/ubl21dian/issues",
+        "source": "https://github.com/lopezsoft/ubl21dian"
     },
     "license": "LGPL-3.0",
     "authors": [
         {
-            "name": "Stenfrank",
-            "email": "frank921713@hotmail.com",
-            "homepage": "https://soenac.com"
+            "name": "Lewis Lopez",
+            "email": "lopezsoft.com@gmail.com",
+            "homepage": "https://matias-api.com"
         }
     ],
     "minimum-stability": "stable",
@@ -35,7 +35,7 @@
         "nesbot/carbon": "^2.19"
     },
     "require-dev": {
-        "phpunit/phpunit": "^7.0"
+        "phpunit/phpunit": "^8.1"
     },
     "autoload": {
         "psr-4": {
