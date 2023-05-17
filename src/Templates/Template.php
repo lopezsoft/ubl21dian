@@ -4,7 +4,7 @@ namespace Lopezsoft\UBL21dian\Templates;
 
 use Exception;
 use Lopezsoft\UBL21dian\Client;
-use lopezsoft\UBL21dian\BinarySecurityToken\SOAP;
+use Lopezsoft\UBL21dian\BinarySecurityToken\SOAP;
 
 /**
  * Template.
@@ -28,7 +28,7 @@ class Template extends SOAP
     /**
      * Sign.
      *
-     * @return \lopezsoft\UBL21dian\BinarySecurityToken\SOAP
+     * @return SOAP
      */
     public function sign($string = null): SOAP
     {

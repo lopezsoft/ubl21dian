@@ -3,7 +3,7 @@
 namespace Lopezsoft\Tests;
 
 use DOMDocument;
-use lopezsoft\UBL21dian\BinarySecurityToken\SOAP;
+use Lopezsoft\UBL21dian\BinarySecurityToken\SOAP;
 
 /**
  * Sign soap test.
