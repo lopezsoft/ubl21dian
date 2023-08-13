@@ -181,14 +181,13 @@ trait DIANTrait
      *
      * @param any $name
      *
-     * @return any
+     * @return void
      */
     public function __get($name)
     {
         if (array_key_exists($name, $this->attributes)) {
             return $this->attributes[$name];
         }
-
         return;
     }
 }

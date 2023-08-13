@@ -10,7 +10,7 @@ use Lopezsoft\UBL21dian\Templates\Template;
  * Función: Consulta de Rangos de Numeración registado en DIAN entregando la información relacionada con estos rangos.
  * Proceso: Sincrónico
  * Método: GetNumberingRange
- * Se requiriere como parámetro el NIT de la empresa, NIT Proveedor Tecnologico, IdentificadorSoftware
+ * Se requiere como parámetro el NIT de la empresa, NIT Proveedor Tecnologico, IdentificadorSoftware
  */
 class GetNumberingRange extends Template implements CreateTemplate
 {
