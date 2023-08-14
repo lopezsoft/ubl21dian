@@ -126,11 +126,11 @@ class SignPayroll extends Sign
     public $resultSignature;
 
 
-    public function __construct($pathCertificate = null, $passwors = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
+    public function __construct($pathCertificate = null, $passwords = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
     {
         $this->algorithm = $algorithm;
 
-        parent::__construct($pathCertificate, $passwors, $xmlString);
+        parent::__construct($pathCertificate, $passwords, $xmlString);
 
         return $this;
     }

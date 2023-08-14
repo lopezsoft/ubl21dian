@@ -31,11 +31,11 @@ class SendBillSync extends Template implements CreateTemplate
      * Construct.
      *
      * @param string $pathCertificate
-     * @param string $passwors
+     * @param string $passwords
      */
-    public function __construct($pathCertificate, $passwors)
+    public function __construct($pathCertificate, $passwords)
     {
-        parent::__construct($pathCertificate, $passwors);
+        parent::__construct($pathCertificate, $passwords);
     }
 
     /**

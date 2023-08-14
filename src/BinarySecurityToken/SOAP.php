@@ -125,11 +125,11 @@ class SOAP extends Sign
         'xmlns:wcf' => self::DIAN_COLOMBIA,
     ];
 
-    public function __construct($pathCertificate = null, $passwors = null, $xmlString = null)
+    public function __construct($pathCertificate = null, $passwords = null, $xmlString = null)
     {
         $this->CurrentTime = time();
 
-        parent::__construct($pathCertificate, $passwors, $xmlString);
+        parent::__construct($pathCertificate, $passwords, $xmlString);
 
         return $this;
     }

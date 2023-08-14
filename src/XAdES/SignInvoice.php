@@ -9,6 +9,9 @@ use Lopezsoft\UBL21dian\Sign;
 
 /**
  * Sign Invoice.
+ * @property \DOMElement $extensionContentSing
+ * @property \DOMElement $signature
+ * @property \DOMElement $signedInfo
  */
 class SignInvoice extends Sign
 {
@@ -141,11 +144,11 @@ class SignInvoice extends Sign
      */
     private $extracerts = [];
 
-    public function __construct($pathCertificate = null, $passwors = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
+    public function __construct($pathCertificate = null, $passwords = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
     {
         $this->algorithm = $algorithm;
 
-        parent::__construct($pathCertificate, $passwors, $xmlString);
+        parent::__construct($pathCertificate, $passwords, $xmlString);
 
         return $this;
     }
@@ -417,6 +420,7 @@ class SignInvoice extends Sign
 
     /**
      * CUFE.
+     * @throws \Exception
      */
     private function cufe()
     {
@@ -427,6 +431,7 @@ class SignInvoice extends Sign
 
     /**
      * Cude.
+     * @throws \Exception
      */
     private function cude()
     {

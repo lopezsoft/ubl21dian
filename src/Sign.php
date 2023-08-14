@@ -22,13 +22,13 @@ abstract class Sign
      * Construct.
      *
      * @param string $pathCertificate
-     * @param string $passwors
+     * @param string $passwords
      * @param string $xmlString
      */
-    public function __construct($pathCertificate = null, $passwors = null, $xmlString = null)
+    public function __construct($pathCertificate = null, $passwords = null, $xmlString = null)
     {
         $this->pathCertificate = $pathCertificate;
-        $this->passwors = $passwors;
+        $this->passwors = $passwords;
         $this->xmlString = $xmlString;
 
         $this->readCerts();

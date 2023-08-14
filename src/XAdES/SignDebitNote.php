@@ -23,4 +23,10 @@ class SignDebitNote extends SignInvoice
         'xmlns:xades' => 'http://uri.etsi.org/01903/v1.3.2#',
         'xmlns:ds' => SignInvoice::XMLDSIG,
     ];
+    /**
+     * Group of totals.
+     *
+     * @var string
+     */
+    public $groupOfTotals = 'RequestedMonetaryTotal';
 }
