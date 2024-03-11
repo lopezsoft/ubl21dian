@@ -1,6 +1,6 @@
 <?php
 
-namespace ubl21dian\XAdES;
+namespace Lopezsoft\UBL21dian\XAdES;
 
 /**
  * Sign Invoice.
