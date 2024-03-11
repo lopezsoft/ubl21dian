@@ -137,13 +137,6 @@ class SignInvoice extends Sign
      */
     public $groupOfTotals = 'LegalMonetaryTotal';
 
-    /**
-     * Extra certs.
-     *
-     * @var array
-     */
-    private $extracerts = [];
-
     public function __construct($pathCertificate = null, $passwords = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
     {
         $this->algorithm = $algorithm;
@@ -253,31 +246,6 @@ class SignInvoice extends Sign
 
         $this->X509SerialNumberCert = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($this->certs['cert'])['serialNumber']);
         $this->issuerSerialCert->appendChild($this->X509SerialNumberCert);
-
-        // Extracerts
-        // foreach ($this->certs['extracerts'] as $key => $extracert) {
-        //     $this->extracerts['Cert'][$key] = $this->domDocument->createElement('xades:Cert');
-        //     $this->signingCertificate->appendChild($this->extracerts['Cert'][$key]);
-
-        //     $this->extracerts['CertDigest'][$key] = $this->domDocument->createElement('xades:CertDigest');
-        //     $this->extracerts['Cert'][$key]->appendChild($this->extracerts['CertDigest'][$key]);
-
-        //     $this->extracerts['DigestMethod'][$key] = $this->domDocument->createElement('ds:DigestMethod');
-        //     $this->extracerts['DigestMethod'][$key]->setAttribute('Algorithm', $this->algorithm['algorithm']);
-        //     $this->extracerts['CertDigest'][$key]->appendChild($this->extracerts['DigestMethod'][$key]);
-
-        //     $this->extracerts['DigestValue'][$key] = $this->domDocument->createElement('ds:DigestValue', base64_encode(openssl_x509_fingerprint($extracert, $this->algorithm['hash'], true)));
-        //     $this->extracerts['CertDigest'][$key]->appendChild($this->extracerts['DigestValue'][$key]);
-
-        //     $this->extracerts['IssuerSerial'][$key] = $this->domDocument->createElement('xades:IssuerSerial');
-        //     $this->extracerts['Cert'][$key]->appendChild($this->extracerts['IssuerSerial'][$key]);
-
-        //     $this->extracerts['X509IssuerName'][$key] = $this->domDocument->createElement('ds:X509IssuerName', $this->joinArray(array_reverse(openssl_x509_parse($extracert)['issuer']), false, ','));
-        //     $this->extracerts['IssuerSerial'][$key]->appendChild($this->extracerts['X509IssuerName'][$key]);
-
-        //     $this->extracerts['X509SerialNumber'][$key] = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($extracert)['serialNumber']);
-        //     $this->extracerts['IssuerSerial'][$key]->appendChild($this->extracerts['X509SerialNumber'][$key]);
-        // }
 
         $this->signaturePolicyIdentifier = $this->domDocument->createElement('xades:SignaturePolicyIdentifier');
         $this->signedSignatureProperties->appendChild($this->signaturePolicyIdentifier);
