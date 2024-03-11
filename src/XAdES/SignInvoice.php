@@ -178,7 +178,11 @@ class SignInvoice extends Sign
         $this->digestValueXML();
 
         $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(1);
-
+        // Consulta XPath para verificar la existencia de CustomTagGeneral dentro de ExtensionContent, Sector salud
+        $customTagGeneralNodes =  $this->domDocument->documentElement->getElementsByTagName('CustomTagGeneral');
+        if ($customTagGeneralNodes->length > 0) {
+            $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(2);
+        }
         $this->signature = $this->domDocument->createElement('ds:Signature');
         $this->signature->setAttribute('xmlns:ds', self::XMLDSIG);
         $this->signature->setAttribute('Id', $this->SignatureID);
