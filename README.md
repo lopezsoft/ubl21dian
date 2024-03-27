@@ -9,9 +9,10 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 * 1.2: Contains valid proofs for the sending of credit notes and calculation of the CUDE.
 * 1.3: License LGPL.
 * 2.0: Contains valid proofs for the sending of debit notes and document name standard.
+* 3.1.5: Events for the sending of invoices, credit notes and debit notes.
 
 # Resources
-* [Documentation](https://api.matias-api.com.co/api/documentation)
+* [Documentation](https://lopezsoft.github.io/docs-matias-api.github.io)
 
 ## Authors
 
