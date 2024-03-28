@@ -12,6 +12,7 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 * 3.1.5: Events for the sending of invoices, credit notes and debit notes.
 * 3.1.7: Events for the sending of invoices, credit notes and debit notes.
 * 3.1.8: Events for the sending of invoices, credit notes and debit notes.
+* 3.1.9: Ajustes en la firma de eventos.
 
 # Resources
 * [Documentation](https://lopezsoft.github.io/docs-matias-api.github.io)
