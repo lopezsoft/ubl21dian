@@ -14,19 +14,18 @@ abstract class Sign
     /**
      * Abstract loadXML.
      *
-     * @return void
+     * @var void
      */
     abstract protected function loadXML();
 
     /**
      * Construct.
      *
-     * @param string|null $pathCertificate
-     * @param string|null $passwords
-     * @param string|null $xmlString
-     * @throws \Exception
+     * @param string $pathCertificate
+     * @param string $passwords
+     * @param string $xmlString
      */
-    public function __construct(string $pathCertificate = null, string $passwords = null, string $xmlString = null)
+    public function __construct($pathCertificate = null, $passwords = null, $xmlString = null)
     {
         $this->pathCertificate = $pathCertificate;
         $this->passwors = $passwords;
@@ -45,6 +44,7 @@ abstract class Sign
     /**
      * Get document.
      *
+     * @return DOMDocument
      */
     public function getDocument()
     {
@@ -54,10 +54,11 @@ abstract class Sign
     /**
      * Sign.
      *
-     * @param string|null $string
+     * @param string $string
      *
+     * @return XAdESDIAN
      */
-    public function sign(string $string = null): Sign
+    public function sign($string = null)
     {
         if (null != $string) {
             $this->xmlString = $string;

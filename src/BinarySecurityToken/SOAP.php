@@ -94,7 +94,7 @@ class SOAP extends Sign
      * @var array
      */
     protected $ids = [
-        'wsuBinarySecurityTokenID' => 'LOPEZSOFT',
+        'wsuBinarySecurityTokenID' => 'SOENAC',
         'securityTokenReferenceID' => 'STR',
         'signatureID' => 'SIG',
         'timestampID' => 'TS',
@@ -245,11 +245,11 @@ class SOAP extends Sign
     /**
      * Digest value.
      *
-     * @param string|null $string
+     * @param string $string
      *
      * @return string
      */
-    public function digestValue(string $string = null): string
+    public function digestValue($string = null)
     {
         $domDocument = new DOMDocument($this->version, $this->encoding);
         $domDocument->loadXML(str_replace('<wsa:To ', "<wsa:To {$this->joinArray($this->toNS)} ", $string ?? $this->domDocument->saveXML($this->to)));
@@ -267,11 +267,11 @@ class SOAP extends Sign
     /**
      * Signature.
      *
-     * @param string|null $string
+     * @param string $string
      *
      * @return string
      */
-    public function signature(string $string = null): string
+    public function signature($string = null)
     {
         $domDocument = new DOMDocument($this->version, $this->encoding);
         $domDocument->loadXML(str_replace('<ds:SignedInfo', "<ds:SignedInfo {$this->joinArray($this->signedInfoNS)}", $string ?? $this->domDocument->saveXML($this->signedInfo)));

@@ -7,7 +7,7 @@ use Lopezsoft\UBL21dian\Templates\Template;
 
 /**
  * Get Exchange Emails.
- * Función: Consultar el correo electrónico suministrado por el adquiriente registrado en el procedimiento de habilitación como facturador electrónico.
+ * Función: Consultar el correo electrónico suministrada por el adquiriente registrado en el procedimiento de habilitación como facturador electrónico.
  * Proceso: Sincrónico
  * Método: GetExchangeEmails
  */

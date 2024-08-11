@@ -37,7 +37,7 @@ class Client
      *
      * @var int
      */
-    private $httpStatusCode;
+    private int $httpStatusCode;
 
     /**
      * Construct.
@@ -74,9 +74,6 @@ class Client
      */
     private function exec()
     {
-        if (false === ($this->response = curl_exec($this->curl))) {
-            throw new Exception('Class '.get_class($this).': '.curl_error($this->curl));
-        }
         $this->response = curl_exec($this->curl);
 
         if ($this->response === false) {

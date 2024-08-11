@@ -28,9 +28,9 @@ class Template extends SOAP
     /**
      * Sign.
      *
-     * @throws Exception
+     * @return SOAP
      */
-    public function sign(string $string = null): \Lopezsoft\UBL21dian\Sign
+    public function sign($string = null): SOAP
     {
         $this->requiredProperties();
 
@@ -40,8 +40,7 @@ class Template extends SOAP
     /**
      * Sign to send.
      *
-     * @return Client
-     * @throws Exception
+     * @return \Lopezsoft\UBL21dian\Client
      */
     public function signToSend(): Client
     {
@@ -54,7 +53,6 @@ class Template extends SOAP
 
     /**
      * Required properties.
-     * @throws Exception
      */
     private function requiredProperties()
     {
