@@ -33,17 +33,25 @@ class Client
     private $response;
 
     /**
+     * HTTP Status Code.
+     *
+     * @var int
+     */
+    private $httpStatusCode;
+
+    /**
      * Construct.
      *
-     * @param \Lopezsoft\UBL21dian\Templates\Template $template
+     * @param Template $template
+     * @throws Exception
      */
     public function __construct(Template $template)
     {
         $this->curl = curl_init();
 
         curl_setopt($this->curl, CURLOPT_URL, $this->to = $template->To);
-        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 180);
-        curl_setopt($this->curl, CURLOPT_TIMEOUT, 180);
+        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 20);
+        curl_setopt($this->curl, CURLOPT_TIMEOUT, 20);
         curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
@@ -62,12 +70,71 @@ class Client
 
     /**
      * Exec.
+     * @throws Exception
      */
     private function exec()
     {
         if (false === ($this->response = curl_exec($this->curl))) {
             throw new Exception('Class '.get_class($this).': '.curl_error($this->curl));
         }
+        $this->response = curl_exec($this->curl);
+
+        if ($this->response === false) {
+            $errorCode = curl_errno($this->curl);
+            if ($errorCode === CURLE_OPERATION_TIMEDOUT) {
+               $this->httpStatusCode = 504;
+               $this->handleHttpErrors();
+            }
+            throw new Exception('Class '.get_class($this).': '.curl_error($this->curl));
+        }
+
+        $this->httpStatusCode = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+
+        $this->handleHttpErrors();
+    }
+
+    /**
+     * Handle HTTP errors.
+     * @throws Exception
+     */
+    private function handleHttpErrors(): void
+    {
+        switch ($this->httpStatusCode) {
+            case 500:
+                throw new Exception($this->getErrorMessage(500));
+            case 503:
+                throw new Exception($this->getErrorMessage(503));
+            case 507:
+                throw new Exception($this->getErrorMessage(507));
+            case 508:
+                throw new Exception($this->getErrorMessage(508));
+            case 403:
+                throw new Exception($this->getErrorMessage(403));
+            default:
+                if ($this->httpStatusCode >= 400) {
+                    throw new Exception($this->getErrorMessage($this->httpStatusCode));
+                }
+        }
+    }
+
+    /**
+     * Obtener mensaje de error basado en el código de estado HTTP.
+     *
+     * @param int $httpStatusCode
+     * @return string
+     */
+    private function getErrorMessage(int $httpStatusCode): string
+    {
+        return match ($httpStatusCode) {
+            500 => 'Error 500: Internal Server Error. Ocurrió un problema en el servidor de la DIAN.',
+            503 => 'Error 503: Service Unavailable. El servicio de la DIAN no está disponible en este momento.',
+            507 => 'Error 507: Insufficient Storage. El servidor de la DIAN no tiene suficiente espacio.',
+            508 => 'Error 508: Loop Detected. Se ha detectado un bucle en el servidor de la DIAN.',
+            403 => 'Error 403: Site Disabled. El sitio está deshabilitado.',
+            504 => 'Error 504: Gateway Timeout. La conexión con la DIAN está tardando más de lo esperado. 
+                Por favor, intente nuevamente. Si el problema persiste, contacte a soporte técnico.',
+            default => 'Error HTTP ' . $httpStatusCode . ': Ha ocurrido un error en la solicitud.',
+        };
     }
 
     /**
@@ -75,7 +142,7 @@ class Client
      *
      * @return string
      */
-    public function getResponse()
+    public function getResponse(): string
     {
         return $this->response;
     }
@@ -84,6 +151,7 @@ class Client
      * Get response to object.
      *
      * @return object
+     * @throws Exception
      */
     public function getResponseToObject()
     {
@@ -149,6 +217,9 @@ class Client
         return (object) $dataXML;
     }
 
+    /**
+     * @throws Exception
+     */
     public function __toString()
     {
         return json_encode($this->getResponseToObject());
