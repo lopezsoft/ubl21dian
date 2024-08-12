@@ -140,7 +140,7 @@ class SignInvoice extends Sign
     public string|null $softwareID = null;
     public string|null $pin = null;
     public string|null $technicalKey = null;
-    private bool $contingency = false;
+    public bool $contingency = false;
 
     public function __construct($pathCertificate = null, $passwords = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
     {

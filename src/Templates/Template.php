@@ -17,6 +17,9 @@ class Template extends SOAP
      * @var string
      */
     public $To = 'https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?wsdl';
+    public string $fileName = '';
+    public string $contentFile = '';
+    public string|null $testSetId = null;
 
     /**
      * Template.
