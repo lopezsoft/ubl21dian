@@ -5,6 +5,7 @@ namespace Lopezsoft\UBL21dian\XAdES;
 use DOMXPath;
 use DOMDocument;
 use Carbon\Carbon;
+use Exception;
 use Lopezsoft\UBL21dian\Sign;
 
 /**
@@ -136,6 +137,10 @@ class SignInvoice extends Sign
      * @var string
      */
     public $groupOfTotals = 'LegalMonetaryTotal';
+    public string|null $softwareID = null;
+    public string|null $pin = null;
+    public string|null $technicalKey = null;
+    private bool $contingency = false;
 
     public function __construct($pathCertificate = null, $passwords = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
     {
@@ -148,8 +153,9 @@ class SignInvoice extends Sign
 
     /**
      * Load XML.
+     * @throws Exception
      */
-    protected function loadXML()
+    protected function loadXML(): void
     {
         if ($this->xmlString instanceof DOMDocument) {
             $this->xmlString = $this->xmlString->saveXML();
@@ -166,7 +172,6 @@ class SignInvoice extends Sign
         if(strpos($this->xmlString, '</ApplicationResponse>') && strpos($this->xmlString, '</AttachedDocument>') === false)
             $this->setCUDEEVENT();
         else
-        // UUID
             $this->setUUID();
 
         // Digest value xml clean
@@ -353,15 +358,16 @@ class SignInvoice extends Sign
     /**
      * Digest value XML.
      */
-    private function digestValueXML()
+    private function digestValueXML(): void
     {
         $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $this->domDocument->C14N(), true));
     }
 
     /**
      * Software security code.
+     * @throws Exception
      */
-    private function softwareSecurityCode()
+    private function softwareSecurityCode(): void
     {
         if (is_null($this->softwareID) || is_null($this->pin)) {
             return;
@@ -372,8 +378,9 @@ class SignInvoice extends Sign
 
     /**
      * set UUID.
+     * @throws Exception
      */
-    private function setUUID()
+    private function setUUID(): void
     {
         // Register name space
         foreach ($this->ns as $key => $value) {
@@ -382,8 +389,7 @@ class SignInvoice extends Sign
 
         if ((!is_null($this->pin)) && (is_null($this->technicalKey))) {
             $this->cude();
-        }
-        if (!is_null($this->technicalKey)) {
+        } elseif (!is_null($this->technicalKey)) {
             $this->cufe();
         }
 
@@ -394,8 +400,9 @@ class SignInvoice extends Sign
 
     /**
      * set CUDEEVENT.
+     * @throws Exception
      */
-    private function setCUDEEVENT()
+    private function setCUDEEVENT(): void
     {
         // Register name space
         foreach ($this->ns as $key => $value) {
@@ -407,9 +414,9 @@ class SignInvoice extends Sign
 
     /**
      * CUFE.
-     * @throws \Exception
+     * @throws Exception
      */
-    private function cufe()
+    private function cufe(): void
     {
         $val    = "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}";
         $this->getTag('UUID', 0)->nodeValue = hash('sha384', $val);
@@ -417,11 +424,11 @@ class SignInvoice extends Sign
 
     /**
      * Cude.
-     * @throws \Exception
+     * @throws Exception
      */
-    private function cude()
+    private function cude(): void
     {
-        if(!is_null($this->contingency)){
+        if(!$this->contingency){
             $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
         }else{
             $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
@@ -430,29 +437,105 @@ class SignInvoice extends Sign
 
     /**
      * Cude Event.
-     * @throws \Exception
+     * @throws Exception
      */
-    private function cudeevent()
+    private function cudeevent(): void
     {
         $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue}{$this->pin}");
-        $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUFEEVENT(), $this->getTag('QRCode', 0)->nodeValue);
+        $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUDEEVENT(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
-    public function ConsultarCUDEEVENT()
+    public function ConsultarCUDEEVENT(): string
     {
-        if (!is_null($this->pin))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue}{$this->pin}");
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del CUDE');
+        return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue}{$this->pin}");
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function ConsultarCUFEEVENT()
     {
-        if (!is_null($this->pin)){}
-            return $this->getTag('UUID', 1)->nodeValue;
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del CUFE');
+        return $this->getTag('UUID', 0)->nodeValue;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getUUID()
+    {
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del UUID');
+        return $this->getTag('UUID', 0)->nodeValue;
+    }
+
+    /**
+     * Obtiene la información del QRCode
+     * @throws Exception
+     */
+    public function getQRData(): string
+    {
+
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del QRCode');
+        // /root/cbc:ID
+        $NumFac = $this->getTag("ID")->nodeValue;
+        // /root/cbc:IssueDate
+        $FecFac = $this->getTag("IssueDate")->nodeValue;
+        // /root/cbc:IssueTime
+        $HorFac = $this->getTag("IssueTime")->nodeValue;
+        // /root/cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID
+        $NitFac = $this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue;
+        // /root/cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID
+        $DocAdq = $this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue;
+        /**
+         * /root/cac:LegalMonetaryTotal/cbc:LineExtensionAmount
+         * /root/cac:RequestedMonetaryTotal/cbc:LineExtensionAmount
+         */
+        $ValFac = $this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue;
+        /**
+         * /root/cac:TaxTotal/cbc:TaxAmount Donde
+         * /root/cac:TaxTotal/cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID = 01
+         */
+        $ValIva = $this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00';
+        /**
+         * Otros impuestos
+         * /root/cac:TaxTotal/cbc:TaxAmount Donde
+         */
+        $otherTaxList   = ['02', '03', '04', '08', '20', '21', '22', '23', '24', '25', '26', 'ZZ', '30', '32', '33', '34', '35', '36'];
+        $ValOtroIm = 0;
+        foreach ($otherTaxList as $tax) {
+            $ValOtroIm += $this->getQuery("cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID={$tax}]/cbc:TaxAmount", false)->nodeValue ?? '0.00';
+        }
+        /**
+         * /root/cac:LegalMonetaryTotal/cbc:PayableAmount o
+         * /root/cac:RequestedMonetaryTotal/cbc:PayableAmount
+         */
+        $ValTolFac= $this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue;
+        // /root/cbc:UUID
+        $CUFE = $this->getTag('UUID', 0)->nodeValue;
+        // /root/ext:UBLExtensions/ext:UBLExtension/ext:ExtensionContent/sts:DianExtensions/sts:QRCode
+        $QRCode = $this->getTag('QRCode', 0)->nodeValue;
+         // Ejemplo
+         /**
+          * NumFac: 323200000129
+          * FecFac: 2019-16-01
+          * HorFac: 10:53:10-05:00
+          * NitFac: 700085371
+          * DocAdq: 800199436
+          * ValFac: 1500000.00
+          * ValIva: 285000.00
+          * ValOtroIm: 0.00
+          * ValTolFac: 1785000.00
+          * CUFE: e5bac48e354bc907bccff0ea7d45fbf784f0a8e7243b58337361e1fbd430489d
+          * https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=e5bac48e354bc907bccff0ea7d45fbf784f0a8e7243b58337361e1fbd430489d
+          */
+        return "NumFac: {$NumFac}\nFecFac: {$FecFac}\nHorFac: {$HorFac}\nNitFac: {$NitFac}\nDocAdq: {$DocAdq}\nValFac: {$ValFac}\nValIva: {$ValIva}\nValOtroIm: {$ValOtroIm}\nValTolFac: {$ValTolFac}\nCUFE: {$CUFE}\n{$QRCode}";
     }
 }
