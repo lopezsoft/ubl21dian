@@ -50,8 +50,8 @@ class Client
         $this->curl = curl_init();
 
         curl_setopt($this->curl, CURLOPT_URL, $this->to = $template->To);
-        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 20);
-        curl_setopt($this->curl, CURLOPT_TIMEOUT, 20);
+        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 30);
+        curl_setopt($this->curl, CURLOPT_TIMEOUT, 30);
         curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, false);
