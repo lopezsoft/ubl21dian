@@ -98,18 +98,18 @@ class Client
     {
         switch ($this->httpStatusCode) {
             case 500:
-                throw new Exception($this->getErrorMessage(500));
+                throw new Exception($this->getErrorMessage(500).': '.curl_error($this->curl));
             case 503:
-                throw new Exception($this->getErrorMessage(503));
+                throw new Exception($this->getErrorMessage(503).': '.curl_error($this->curl));
             case 507:
-                throw new Exception($this->getErrorMessage(507));
+                throw new Exception($this->getErrorMessage(507).': '.curl_error($this->curl));
             case 508:
-                throw new Exception($this->getErrorMessage(508));
+                throw new Exception($this->getErrorMessage(508).': '.curl_error($this->curl));
             case 403:
-                throw new Exception($this->getErrorMessage(403));
+                throw new Exception($this->getErrorMessage(403).': '.curl_error($this->curl));
             default:
                 if ($this->httpStatusCode >= 400) {
-                    throw new Exception($this->getErrorMessage($this->httpStatusCode));
+                    throw new Exception($this->getErrorMessage($this->httpStatusCode).': '.curl_error($this->curl));
                 }
         }
     }
