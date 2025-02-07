@@ -33,7 +33,7 @@
         "ext-libxml": "*",
         "ext-openssl": "*",
         "ext-xmlwriter": "*",
-        "nesbot/carbon": "^2.19",
+        "nesbot/carbon": "^3.8",
         "ext-json": "*"
     },
     "require-dev": {
