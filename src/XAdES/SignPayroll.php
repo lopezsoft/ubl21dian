@@ -195,7 +195,7 @@ class SignPayroll extends Sign
         $this->signedSignatureProperties = $this->domDocument->createElement('xades:SignedSignatureProperties');
         $this->signedProperties->appendChild($this->signedSignatureProperties);
 
-        $this->signingTime = $this->domDocument->createElement('xades:SigningTime', Carbon::now()->format('Y-m-d\TH:i:s.vT:00'));
+        $this->signingTime = $this->domDocument->createElement('xades:SigningTime', Carbon::now('America/Bogota')->format('Y-m-d\TH:i:s.vP'));
         $this->signedSignatureProperties->appendChild($this->signingTime);
 
         $this->signingCertificate = $this->domDocument->createElement('xades:SigningCertificate');
