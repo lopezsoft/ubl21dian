@@ -16,6 +16,7 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 * 3.2.0: Control de errores en las solicitudes.
 * 3.2.3: Ajustes en SignInvoice, para que permita obtener el CUFE Y QR.
 * 3.2.6: Ajustes en SignInvoice, para generar acuse de recibo.
+* 3.3.0: FIX - Corregir formato dateTime en XML para SigningTime en facturas DIAN.
 
 # Resources
 * [Documentation](https://lopezsoft.github.io/docs-matias-api.github.io)
