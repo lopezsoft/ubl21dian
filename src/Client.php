@@ -96,20 +96,21 @@ class Client
      */
     private function handleHttpErrors(): void
     {
+        $additionalMessage = ' Por favor, intente de nuevo en un par de minutos.';
         switch ($this->httpStatusCode) {
             case 500:
                 throw new Exception($this->getErrorMessage(500).': '.$this->response);
             case 503:
-                throw new Exception($this->getErrorMessage(503));
+                throw new Exception($this->getErrorMessage(503).$additionalMessage);
             case 507:
-                throw new Exception($this->getErrorMessage(507));
+                throw new Exception($this->getErrorMessage(507).$additionalMessage);
             case 508:
-                throw new Exception($this->getErrorMessage(508));
+                throw new Exception($this->getErrorMessage(508).$additionalMessage);
             case 403:
-                throw new Exception($this->getErrorMessage(403).': '.$this->response);
+                throw new Exception($this->getErrorMessage(403).$additionalMessage);
             default:
                 if ($this->httpStatusCode >= 400) {
-                    throw new Exception($this->getErrorMessage($this->httpStatusCode));
+                    throw new Exception($this->getErrorMessage($this->httpStatusCode).$additionalMessage);
                 }
         }
     }
@@ -127,10 +128,10 @@ class Client
             503 => 'Error 503: Service Unavailable. El servicio de la DIAN no está disponible en este momento.',
             507 => 'Error 507: Insufficient Storage. El servidor de la DIAN no tiene suficiente espacio.',
             508 => 'Error 508: Loop Detected. Se ha detectado un bucle en el servidor de la DIAN.',
-            403 => 'Error 403: Site Disabled. El sitio está deshabilitado.',
+            403 => 'Error 403: Site Disabled. El sitio de la DIAN está deshabilitado.',
             504 => 'Error 504: Gateway Timeout. La conexión con la DIAN está tardando más de lo esperado. 
                 Por favor, intente nuevamente. Si el problema persiste, contacte a soporte técnico.',
-            default => 'Error HTTP ' . $httpStatusCode . ': Ha ocurrido un error en la solicitud.',
+            default => 'Error HTTP ' . $httpStatusCode . ': Ha ocurrido un error en la solicitud a la DIAN.',
         };
     }
 
