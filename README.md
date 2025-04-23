@@ -18,8 +18,10 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 * 3.2.6: Ajustes en SignInvoice, para generar acuse de recibo.
 * 3.2.11: FIX - Corregir formato dateTime en XML para SigningTime en facturas DIAN.
 * * 3.2.11: Feature - Se mejora la descripción en los errores devueltos por la DIAN.
+* 3.3.0: Feature - Se agrega GetAcquirer para obtener los datos de la entidad adquirente. De acuerdo a la resolution Resolución 000202 de 2025.
+* 
 # Resources
-* [Documentation](https://lopezsoft.github.io/docs-matias-api.github.io)
+* [Documentation](https://docs.matias-api.com)
 
 ## Authors
 
