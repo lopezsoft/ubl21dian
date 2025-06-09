@@ -493,6 +493,13 @@ class SignPayroll extends Sign
      */
     public function setCUNE()
     {
-        $this->getTag('InformacionGeneral', 0)->setAttribute('CUNE', $this->getCUNE());
+        $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+
+        $cuneValue = $this->getCUNE();
+        $informacionGeneralNode->setAttribute('CUNE', $cuneValue);
+
+        // QR URL
+        $qr = ($informacionGeneralNode->getAttribute('Ambiente') == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
+        $this->getTag('CodigoQR', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$cuneValue}";
     }
 }
