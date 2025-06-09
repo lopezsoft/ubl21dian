@@ -5,6 +5,7 @@ namespace Lopezsoft\UBL21dian\XAdES;
 use DOMXPath;
 use DOMDocument;
 use Carbon\Carbon;
+use Exception;
 use Lopezsoft\UBL21dian\Sign;
 
 /**
@@ -501,5 +502,24 @@ class SignPayroll extends Sign
         // QR URL
         $qr = ($informacionGeneralNode->getAttribute('Ambiente') == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
         $this->getTag('CodigoQR', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$cuneValue}";
+    }
+
+    /**
+     * Get QR data.
+     */
+    public function getQRData(): string
+    {
+        $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+
+        return "NumNIE: {$this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')}\n" .
+            "FecNIE: {$informacionGeneralNode->getAttribute('FechaGen')}\n" .
+            "HorNIE: {$informacionGeneralNode->getAttribute('HoraGen')}\n" .
+            "NitNIE: {$this->getTag('Empleador', 0)->getAttribute('NIT')}\n" .
+            "DocEmp: {$this->getTag('Trabajador', 0)->getAttribute('NumeroDocumento')}\n" .
+            "ValDev: {$this->getTag('DevengadosTotal', 0)->nodeValue}\n" .
+            "ValDed: {$this->getTag('DeduccionesTotal', 0)->nodeValue}\n" .
+            "ValTol: {$this->getTag('ComprobanteTotal', 0)->nodeValue}\n" .
+            "CUNE: {$informacionGeneralNode->getAttribute('CUNE')}\n" .
+            $this->getTag('CodigoQR', 0)->nodeValue;
     }
 }
