@@ -150,6 +150,9 @@ class SignPayroll extends Sign
         // DOMX path
         $this->domXPath = new DOMXPath($this->domDocument);
 
+        // Software security code
+        $this->softwareSecurityCode();
+
         // Digest value xml clean
         $this->digestValueXML();
 
@@ -439,6 +442,20 @@ class SignPayroll extends Sign
         $this->domDocument->loadXML($CopyOfdomDocument);
 
         $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $value, true));
+    }
 
+    /**
+     * Software security code.
+     */
+    private function softwareSecurityCode()
+    {
+        if (is_null($this->softwareID) || is_null($this->pin)) {
+            return;
+        }
+
+        $number = $this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero');
+        $securityCode = hash('sha384', "{$this->softwareID}{$this->pin}{$number}");
+
+        $this->getTag('ProveedorXML', 0)->setAttribute('SoftwareSC', $securityCode);
     }
 }
