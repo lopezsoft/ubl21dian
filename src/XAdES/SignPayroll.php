@@ -153,6 +153,9 @@ class SignPayroll extends Sign
         // Software security code
         $this->softwareSecurityCode();
 
+        // Set CUNE
+        $this->setCUNE();
+
         // Digest value xml clean
         $this->digestValueXML();
 
@@ -457,5 +460,39 @@ class SignPayroll extends Sign
         $securityCode = hash('sha384', "{$this->softwareID}{$this->pin}{$number}");
 
         $this->getTag('ProveedorXML', 0)->setAttribute('SoftwareSC', $securityCode);
+    }
+
+    /**
+     * Get CUNE.
+     */
+    public function getCUNE(): string
+    {
+        $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+        $numeroSecuenciaXMLNode = $this->getTag('NumeroSecuenciaXML', 0);
+        $empleadorNode = $this->getTag('Empleador', 0);
+        $trabajadorNode = $this->getTag('Trabajador', 0);
+
+        // CUNE
+        $stringToHash = $numeroSecuenciaXMLNode->getAttribute('Numero')
+            . $informacionGeneralNode->getAttribute('FechaGen')
+            . $informacionGeneralNode->getAttribute('HoraGen')
+            . $this->getTag('DevengadosTotal', 0)->nodeValue
+            . $this->getTag('DeduccionesTotal', 0)->nodeValue
+            . $this->getTag('ComprobanteTotal', 0)->nodeValue
+            . $empleadorNode->getAttribute('NIT')
+            . $trabajadorNode->getAttribute('NumeroDocumento')
+            . $informacionGeneralNode->getAttribute('TipoXML')
+            . $this->pin
+            . $informacionGeneralNode->getAttribute('Ambiente');
+
+        return hash('sha384', $stringToHash);
+    }
+
+    /**
+     * Set CUNE.
+     */
+    public function setCUNE()
+    {
+        $this->getTag('InformacionGeneral', 0)->setAttribute('CUNE', $this->getCUNE());
     }
 }
