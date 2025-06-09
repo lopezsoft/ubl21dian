@@ -3,7 +3,7 @@
     "type": "library",
     "description": "Core for electronic invoicing pre-validation - DIAN UBL 2.1",
     "homepage": "https://matias-api.com",
-    "version": "3.4.0",
+    "version": "3.5.0",
     "keywords": [
         "soap dian",
         "web service",
