@@ -5,6 +5,7 @@ namespace Lopezsoft\UBL21dian\XAdES;
 use DOMXPath;
 use DOMDocument;
 use Carbon\Carbon;
+use Exception;
 use Lopezsoft\UBL21dian\Sign;
 
 /**
@@ -149,6 +150,12 @@ class SignPayroll extends Sign
 
         // DOMX path
         $this->domXPath = new DOMXPath($this->domDocument);
+
+        // Software security code
+        $this->softwareSecurityCode();
+
+        // Set CUNE
+        $this->setCUNE();
 
         // Digest value xml clean
         $this->digestValueXML();
@@ -439,6 +446,80 @@ class SignPayroll extends Sign
         $this->domDocument->loadXML($CopyOfdomDocument);
 
         $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $value, true));
+    }
 
+    /**
+     * Software security code.
+     */
+    private function softwareSecurityCode()
+    {
+        if (is_null($this->softwareID) || is_null($this->pin)) {
+            return;
+        }
+
+        $number = $this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero');
+        $securityCode = hash('sha384', "{$this->softwareID}{$this->pin}{$number}");
+
+        $this->getTag('ProveedorXML', 0)->setAttribute('SoftwareSC', $securityCode);
+    }
+
+    /**
+     * Get CUNE.
+     */
+    public function getCUNE(): string
+    {
+        $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+        $numeroSecuenciaXMLNode = $this->getTag('NumeroSecuenciaXML', 0);
+        $empleadorNode = $this->getTag('Empleador', 0);
+        $trabajadorNode = $this->getTag('Trabajador', 0);
+
+        // CUNE
+        $stringToHash = $numeroSecuenciaXMLNode->getAttribute('Numero')
+            . $informacionGeneralNode->getAttribute('FechaGen')
+            . $informacionGeneralNode->getAttribute('HoraGen')
+            . $this->getTag('DevengadosTotal', 0)->nodeValue
+            . $this->getTag('DeduccionesTotal', 0)->nodeValue
+            . $this->getTag('ComprobanteTotal', 0)->nodeValue
+            . $empleadorNode->getAttribute('NIT')
+            . $trabajadorNode->getAttribute('NumeroDocumento')
+            . $informacionGeneralNode->getAttribute('TipoXML')
+            . $this->pin
+            . $informacionGeneralNode->getAttribute('Ambiente');
+
+        return hash('sha384', $stringToHash);
+    }
+
+    /**
+     * Set CUNE.
+     */
+    public function setCUNE()
+    {
+        $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+
+        $cuneValue = $this->getCUNE();
+        $informacionGeneralNode->setAttribute('CUNE', $cuneValue);
+
+        // QR URL
+        $qr = ($informacionGeneralNode->getAttribute('Ambiente') == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
+        $this->getTag('CodigoQR', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$cuneValue}";
+    }
+
+    /**
+     * Get QR data.
+     */
+    public function getQRData(): string
+    {
+        $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+
+        return "NumNIE: {$this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')}\n" .
+            "FecNIE: {$informacionGeneralNode->getAttribute('FechaGen')}\n" .
+            "HorNIE: {$informacionGeneralNode->getAttribute('HoraGen')}\n" .
+            "NitNIE: {$this->getTag('Empleador', 0)->getAttribute('NIT')}\n" .
+            "DocEmp: {$this->getTag('Trabajador', 0)->getAttribute('NumeroDocumento')}\n" .
+            "ValDev: {$this->getTag('DevengadosTotal', 0)->nodeValue}\n" .
+            "ValDed: {$this->getTag('DeduccionesTotal', 0)->nodeValue}\n" .
+            "ValTol: {$this->getTag('ComprobanteTotal', 0)->nodeValue}\n" .
+            "CUNE: {$informacionGeneralNode->getAttribute('CUNE')}\n" .
+            $this->getTag('CodigoQR', 0)->nodeValue;
     }
 }
