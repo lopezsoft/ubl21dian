@@ -507,10 +507,12 @@ class SignPayroll extends Sign
     public function getQRData(): string
     {
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+        $tipoNota = $this->getTag('TipoNota', 0, false);
 
         return "NumNIE: {$this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')}\n" .
             "FecNIE: {$informacionGeneralNode->getAttribute('FechaGen')}\n" .
             "HorNIE: {$informacionGeneralNode->getAttribute('HoraGen')}\n" .
+            ($tipoNota ? "TipoNota: {$tipoNota->nodeValue}\n" : "") .
             "NitNIE: {$this->getTag('Empleador', 0)->getAttribute('NIT')}\n" .
             "DocEmp: " . ($this->getTag('Trabajador', 0, false)?->getAttribute('NumeroDocumento') ?? '0') . "\n" .
             "ValDev: " . ($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
