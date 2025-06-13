@@ -90,18 +90,13 @@ trait DIANTrait
 
     /**
      * Get tag.
-     *
-     * @param string $tagName
-     * @param int    $item
-     *
-     * @return mixed
      */
-    protected function getTag($tagName, $item = 0)
+    protected function getTag(string $tagName, int $item = 0, bool $validate = true): mixed
     {
         $tag = $this->domDocument->documentElement->getElementsByTagName($tagName);
 
-        if (is_null($tag->item(0))) {
-            throw new Exception('Class '.get_class($this).": The tag name {$tagName} does not exist.");
+        if (($validate) && (is_null($tag->item(0)))) {
+            throw new Exception('Class ' . get_class($this) . ": The tag name {$tagName} does not exist.");
         }
 
         return $tag->item($item);

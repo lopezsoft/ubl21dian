@@ -469,19 +469,16 @@ class SignPayroll extends Sign
     public function getCUNE(): string
     {
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
-        $numeroSecuenciaXMLNode = $this->getTag('NumeroSecuenciaXML', 0);
-        $empleadorNode = $this->getTag('Empleador', 0);
-        $trabajadorNode = $this->getTag('Trabajador', 0);
 
         // CUNE
-        $stringToHash = $numeroSecuenciaXMLNode->getAttribute('Numero')
+        $stringToHash = $this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')
             . $informacionGeneralNode->getAttribute('FechaGen')
             . $informacionGeneralNode->getAttribute('HoraGen')
-            . $this->getTag('DevengadosTotal', 0)->nodeValue
-            . $this->getTag('DeduccionesTotal', 0)->nodeValue
-            . $this->getTag('ComprobanteTotal', 0)->nodeValue
-            . $empleadorNode->getAttribute('NIT')
-            . $trabajadorNode->getAttribute('NumeroDocumento')
+            . ($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00')
+            . ($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00')
+            . ($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00')
+            . $this->getTag('Empleador', 0)->getAttribute('NIT')
+            . ($this->getTag('Trabajador', 0, false)?->getAttribute('NumeroDocumento') ?? '0')
             . $informacionGeneralNode->getAttribute('TipoXML')
             . $this->pin
             . $informacionGeneralNode->getAttribute('Ambiente');
@@ -510,15 +507,17 @@ class SignPayroll extends Sign
     public function getQRData(): string
     {
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
+        $tipoNota = $this->getTag('TipoNota', 0, false);
 
         return "NumNIE: {$this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')}\n" .
             "FecNIE: {$informacionGeneralNode->getAttribute('FechaGen')}\n" .
             "HorNIE: {$informacionGeneralNode->getAttribute('HoraGen')}\n" .
+            ($tipoNota ? "TipoNota: {$tipoNota->nodeValue}\n" : "") .
             "NitNIE: {$this->getTag('Empleador', 0)->getAttribute('NIT')}\n" .
-            "DocEmp: {$this->getTag('Trabajador', 0)->getAttribute('NumeroDocumento')}\n" .
-            "ValDev: {$this->getTag('DevengadosTotal', 0)->nodeValue}\n" .
-            "ValDed: {$this->getTag('DeduccionesTotal', 0)->nodeValue}\n" .
-            "ValTol: {$this->getTag('ComprobanteTotal', 0)->nodeValue}\n" .
+            "DocEmp: " . ($this->getTag('Trabajador', 0, false)?->getAttribute('NumeroDocumento') ?? '0') . "\n" .
+            "ValDev: " . ($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
+            "ValDed: " . ($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
+            "ValTol: " . ($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
             "CUNE: {$informacionGeneralNode->getAttribute('CUNE')}\n" .
             $this->getTag('CodigoQR', 0)->nodeValue;
     }
