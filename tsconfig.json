@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",         // Versión de JavaScript a la que compilarás
+    "module": "CommonJS",      // Sistema de módulos compatible con Node.js
+    "declaration": true,       // ¡Muy importante! Genera los archivos de tipos (.d.ts)
+    "outDir": "./dist",        // Carpeta donde irá el código compilado
+    "rootDir": "./src",        // Carpeta donde está tu código fuente TypeScript
+    "strict": true,            // Habilita todas las opciones de chequeo estricto
+    "esModuleInterop": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"],          // Solo compila los archivos dentro de la carpeta src
+  "exclude": ["node_modules", "dist"] // Excluye estas carpetas
+}
