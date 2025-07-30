@@ -22,7 +22,8 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 * 3.5.0: Feature - Calcular y setear el SoftwareSecurityCode
 * 3.5.0: Feature - Calcular y setear CUNE
 * 3.5.0: Feature - Agregar la url de consulta de CUNE en el campo CodigoQR
-* 3.5.0: Feature - Funcion para obtener la informacion del QR
+* 3.5.0: Feature - Funcion para obtener la información del QR
+* 3.5.1: Fix - Ajustes en la nómina de ajustes de eliminación
 # Resources
 * [Documentation](https://docs.matias-api.com)
 
