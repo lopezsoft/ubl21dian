@@ -1,50 +1,52 @@
 import { Certificate, ICertificateData } from './security/Certificate';
 import { SoapClient } from './http/SoapClient';
-import { GetStatusTemplate } from './soap/templates/GetStatusTemplate';
-import { SoapSigner } from './security/SoapSigner'; // Importamos el nuevo signer
-import { fastXmlParser } from './common/utils';
-import {IDianClientOptions} from "./common/interfaces";
+import { SoapSigner } from './security/SoapSigner';
+import { XmlSigner } from './security/XmlSigner';
+import { PayrollSigner } from './security/PayrollSigner';
+import {ICommand, ICommandServices, IDianClientOptions} from './common/interfaces';
 
 /**
- * Cliente principal para interactuar con los servicios de la DIAN.
+ * FACADE: Punto de entrada principal a la librería.
+ * Proporciona una interfaz simple para un subsistema complejo (firma, SOAP, etc.).
+ * Su responsabilidad es gestionar los servicios y ejecutar los comandos.
  */
 export class DianClient {
-	private readonly options: IDianClientOptions;
-	private certificateData?: ICertificateData;
-	private soapClient: SoapClient;
-	private soapSigner: SoapSigner; // Propiedad para el SoapSigner
+	private readonly services: ICommandServices;
+	private isInitialized = false;
 
-	constructor(options: IDianClientOptions) {
-		this.options = options;
-		this.soapClient = new SoapClient(options.environment);
-		this.soapSigner = new SoapSigner(); // Instanciamos el SoapSigner
+	constructor(public options: IDianClientOptions) {
+		this.services = {
+			soapClient: new SoapClient(options.environment),
+			soapSigner: new SoapSigner() as any, // Cast a ISigner si es necesario
+			xmlSigner: new XmlSigner(),
+			payrollSigner: new PayrollSigner(),
+			certificateData: {} as ICertificateData,
+		};
 	}
 
+	/**
+	 * Carga el certificado digital y prepara el cliente para su uso.
+	 */
 	public async initialize(): Promise<void> {
 		const certificate = new Certificate(this.options.certificatePath, this.options.passwordPsswrd);
-		this.certificateData = await certificate.load();
-		console.log('Certificado cargado exitosamente.');
+		this.services.certificateData = await certificate.load();
+		this.isInitialized = true;
+		console.log('Certificado cargado y cliente inicializado.');
 	}
 
-	public async getStatus(trackId: string): Promise<any> {
-		if (!this.certificateData) {
+	/**
+	 * Ejecuta un comando para interactuar con la DIAN.
+	 * @param command La instancia del comando a ejecutar (p. ej. new GetStatusCommand()).
+	 * @param params Los parámetros para ese comando.
+	 * @returns El resultado de la ejecución del comando.
+	 */
+	public async execute<TParams, TResult>(
+		command: ICommand<TParams, TResult>,
+		params: TParams
+	): Promise<TResult> {
+		if (!this.isInitialized) {
 			throw new Error('El cliente no ha sido inicializado. Llama a initialize() primero.');
 		}
-
-		const template = new GetStatusTemplate();
-		const unsignedSoap = template.getXml({ trackId });
-
-		// CORRECCIÓN: Ahora firmamos el sobre SOAP antes de enviarlo.
-		const signedSoap = this.soapSigner.sign(unsignedSoap, this.certificateData);
-
-		const responseXml = await this.soapClient.post(
-			signedSoap, {
-				SOAPAction: 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatus',
-			}
-		);
-
-		const parsedResponse = fastXmlParser.parse(responseXml);
-		// La estructura de la respuesta puede variar, navegamos de forma segura.
-		return parsedResponse?.['s:Envelope']?.['s:Body']?.['GetStatusResponse']?.['GetStatusResult'];
+		return command.execute(this.services, params);
 	}
 }

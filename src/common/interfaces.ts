@@ -20,17 +20,19 @@ export interface ISigner {
  * Esto nos permite desacoplar la lógica de la librería de una
  * implementación específica como axios o fetch.
  */
+/**
+ * Define el contrato para un cliente HTTP.
+ */
 export interface IHttpClient {
 	/**
-	 * Realiza una petición POST a una URL.
-	 * @param url La URL del endpoint.
+	 * Realiza una petición POST. La URL de destino es conocida por la
+	 * implementación del cliente.
 	 * @param data El cuerpo de la petición.
 	 * @param headers Los encabezados de la petición.
 	 * @returns Una promesa que se resuelve con la respuesta de la petición.
 	 */
-	post(url: string, data: any, headers: { [key: string]: string }): Promise<any>;
+	post(data: any, headers: { [key: string]: string }): Promise<any>;
 }
-
 /**
  * Parámetros comunes para todas las plantillas.
  */
@@ -57,3 +59,149 @@ export interface IDianClientOptions {
 	passwordPsswrd: string;
 	environment?: 'HABILITACION' | 'PRODUCCION';
 }
+
+export interface ISendBillSyncParams extends ITemplateParams {
+	fileName: string;
+	contentFile: string; // Este será el XML de la factura, firmado y en Base64
+}
+
+export interface ISendBillAsyncParams extends ITemplateParams {
+	fileName: string;
+	contentFile: string; // XML de la factura, firmado y en Base64
+}
+
+
+export interface IGetNumberingRangeParams extends ITemplateParams {
+	accountCode: string;  // NIT del facturador electrónico
+	accountCodeT: string; // NIT del proveedor tecnológico
+	softwareCode: string; // ID del software
+}
+
+
+export interface ISendEventParams extends ITemplateParams {
+	contentFile: string; // XML del evento (ApplicationResponse), firmado y en Base64
+}
+
+
+export interface IDianClientOptions {
+	certificatePath: string;
+	passwordPsswrd: string;
+	environment?: 'HABILITACION' | 'PRODUCCION';
+}
+
+
+export interface ISendTestSetAsyncParams extends ITemplateParams {
+	fileName: string;
+	contentFile: string; // ZIP en Base64
+	testSetId: string;
+}
+
+export interface IGetStatusZipParams extends ITemplateParams {
+	trackId: string;
+}
+
+export interface ISendNominaSyncParams extends ITemplateParams {
+	contentFile: string; // XML de la nómina, firmado y en Base64
+}
+
+
+export interface ISendBillAttachmentAsyncParams extends ITemplateParams {
+	fileName: string;
+	contentFile: string; // XML del AttachedDocument, firmado y en Base64
+}
+
+/**
+ * Define los servicios que un comando podría necesitar para ejecutarse.
+ * Se pasarán desde el DianClient a cada comando.
+ */
+export interface ICommandServices {
+	soapClient: IHttpClient;
+	soapSigner: ISigner; // Asumimos que SoapSigner también puede implementar ISigner
+	xmlSigner: ISigner;
+	payrollSigner: ISigner;
+	certificateData: any; // ICertificateData
+}
+
+/**
+ * Define el contrato para un Comando. Cada comando encapsula una única
+ * operación del web service de la DIAN.
+ */
+export interface ICommand<TParams, TResult> {
+	/**
+	 * Ejecuta la operación del comando.
+	 * @param services Un objeto con los servicios necesarios (firmantes, cliente http).
+	 * @param params Los parámetros específicos para esta operación.
+	 * @returns Una promesa que se resuelve con el resultado de la operación.
+	 */
+	execute(services: ICommandServices, params: TParams): Promise<TResult>;
+}
+
+export interface IGetStatusCommandParams {
+	trackId: string;
+}
+
+export interface IGetXmlByDocumentKeyParams extends ITemplateParams {
+	trackId: string;
+}
+
+export interface IGetXmlByDocumentKeyParams {
+	trackId: string;
+}
+
+
+export interface IGetXmlByDocumentKeyParams {
+	trackId: string;
+}
+
+export interface IGetReferenceNotesParams extends ITemplateParams {
+	trackId: string;
+}
+
+export interface IGetAcquirerParams extends ITemplateParams {
+	identificationType: string;
+	identificationNumber: string;
+}
+
+export interface ISendBillSyncParams {
+	fileName: string;
+	unsignedUblXml: string;
+}
+
+export interface ISendBillAsyncParams {
+	fileName: string;
+	unsignedUblXml: string;
+}
+
+export interface ISendEventParams {
+	unsignedEventXml: string;
+}
+
+export interface ISendNominaSyncParams {
+	unsignedPayrollXml: string;
+}
+export interface ISendNominaSyncParams {
+	unsignedPayrollXml: string;
+}
+
+export interface IGetStatusZipParams {
+	trackId: string;
+}
+
+export interface ISendBillSyncTemplateParams extends ITemplateParams {
+	fileName: string;
+	contentFile: string;
+}
+
+export interface ISendBillAsyncTemplateParams extends ITemplateParams {
+	fileName: string;
+	contentFile: string;
+}
+
+export interface ISendEventTemplateParams extends ITemplateParams {
+	contentFile: string;
+}
+
+export interface ISendNominaSyncTemplateParams extends ITemplateParams {
+	contentFile: string;
+}
+
