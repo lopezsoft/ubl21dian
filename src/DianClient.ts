@@ -1,9 +1,15 @@
-import { Certificate, ICertificateData } from './security/Certificate';
+import { Certificate } from './security/Certificate';
 import { SoapClient } from './http/SoapClient';
 import { SoapSigner } from './security/SoapSigner';
 import { XmlSigner } from './security/XmlSigner';
 import { PayrollSigner } from './security/PayrollSigner';
-import {ICommand, ICommandServices, IDianClientOptions} from './common/interfaces';
+import {
+	ICertificateData,
+	ICommand,
+	ICommandServices,
+	IDianClientInitializeOptions,
+	IDianClientOptions
+} from './common/interfaces';
 
 /**
  * FACADE: Punto de entrada principal a la librería.
@@ -27,9 +33,12 @@ export class DianClient {
 	/**
 	 * Carga el certificado digital y prepara el cliente para su uso.
 	 */
-	public async initialize(): Promise<void> {
-		const certificate = new Certificate(this.options.certificatePath, this.options.passwordPsswrd);
-		this.services.certificateData = await certificate.load();
+	public async initialize(options: IDianClientInitializeOptions): Promise<void> {
+		const certificateHandler = new Certificate();
+		this.services.certificateData = await certificateHandler.loadFromBuffer(
+			options.certificate,
+			options.passwordPsswrd
+		);
 		this.isInitialized = true;
 		console.log('Certificado cargado y cliente inicializado.');
 	}

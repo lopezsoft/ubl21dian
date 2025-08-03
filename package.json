@@ -17,7 +17,7 @@
     "xades",
     "soap"
   ],
-  "author": "Tu Nombre <tu.email@example.com>",
+  "author": "Lewis Lopez Gomez <gerencia@lopezsoft.net.co>",
   "license": "MIT",
   "devDependencies": {
     "@types/jest": "^29.5.12",

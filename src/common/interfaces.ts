@@ -1,4 +1,3 @@
-import { ICertificateData } from '../security/Certificate';
 
 /**
  * Define el contrato para una clase que firma un documento.
@@ -205,3 +204,26 @@ export interface ISendNominaSyncTemplateParams extends ITemplateParams {
 	contentFile: string;
 }
 
+/**
+ * Representa la información extraída de un certificado digital PKCS#12.
+ */
+export interface ICertificateData {
+	/**
+	 * La clave privada en formato PEM.
+	 */
+	privateKeyPem: string;
+	/**
+	 * La clave pública y la cadena de certificados en formato PEM.
+	 */
+	publicKeyPem: string;
+	/**
+	 * El certificado principal en formato Base64, sin cabeceras ni saltos de línea.
+	 * Este formato es el requerido para el tag <ds:X509Certificate>.
+	 */
+	x509CertificateBase64: string;
+}
+
+export interface IDianClientInitializeOptions {
+	certificate: Buffer; // Espera el contenido del certificado como un Buffer
+	passwordPsswrd: string;
+}
