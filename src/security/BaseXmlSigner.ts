@@ -1,8 +1,7 @@
 import { DOMParser, XMLSerializer } from 'xmldom';
 import { SignedXml } from 'xml-crypto';
 import * as forge from 'node-forge';
-import { ISigner } from '../common/interfaces';
-import { ICertificateData } from './Certificate';
+import {ICertificateData, ISigner} from '../common/interfaces';
 
 /**
  * Clase base abstracta para la firma de documentos XML (UBL).

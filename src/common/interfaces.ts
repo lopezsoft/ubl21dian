@@ -53,11 +53,12 @@ export interface ISoapTemplate {
 
 // Opciones de configuración para el cliente.
 export interface IDianClientOptions {
-	certificatePath: string;
-	password: string;
-	passwordPsswrd: string;
-	environment?: 'HABILITACION' | 'PRODUCCION';
+	passwordPsswrd?: string;
+	environment: 1 | 2; // 2 para HABILITACION, 1 para PRODUCCION
 }
+
+
+
 
 export interface ISendBillSyncParams extends ITemplateParams {
 	fileName: string;
@@ -81,12 +82,6 @@ export interface ISendEventParams extends ITemplateParams {
 	contentFile: string; // XML del evento (ApplicationResponse), firmado y en Base64
 }
 
-
-export interface IDianClientOptions {
-	certificatePath: string;
-	passwordPsswrd: string;
-	environment?: 'HABILITACION' | 'PRODUCCION';
-}
 
 
 export interface ISendTestSetAsyncParams extends ITemplateParams {
@@ -118,7 +113,8 @@ export interface ICommandServices {
 	soapSigner: ISigner; // Asumimos que SoapSigner también puede implementar ISigner
 	xmlSigner: ISigner;
 	payrollSigner: ISigner;
-	certificateData: any; // ICertificateData
+	certificateData: ICertificateData; // ICertificateData
+	environment: 1 | 2; // 1 para PRODUCCIÓN, 2 para HABILITACIÓN
 }
 
 /**

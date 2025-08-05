@@ -6,7 +6,7 @@ import { fastXmlParser } from '../common/utils';
 /**
  * Comando para ejecutar la operación GetXmlByDocumentKey de la DIAN.
  */
-export class GetXmlByDocumentKeyCommand implements ICommand<IGetXmlByDocumentKeyParams, any> {
+export class GetExchangeEmailsCommand implements ICommand<IGetXmlByDocumentKeyParams, any> {
 	public async execute(services: ICommandServices, params: IGetXmlByDocumentKeyParams): Promise<any> {
 		const template = new GetXmlByDocumentKeyTemplate();
 		const unsignedSoap = template.getXml(params);

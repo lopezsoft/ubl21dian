@@ -7,7 +7,7 @@ import { fastXmlParser } from '../common/utils';
 /**
  * Comando para ejecutar la operación SendNominaSync de la DIAN.
  */
-export class SendNominaSyncCommand implements ICommand<ISendNominaSyncParams, any> {
+export class SendTestSetAsyncCommand implements ICommand<ISendNominaSyncParams, any> {
 	public async execute(services: ICommandServices, params: ISendNominaSyncParams): Promise<any> {
 		const signedPayrollXml = await services.payrollSigner.sign(params.unsignedPayrollXml, services.certificateData);
 		const contentFileBase64 = Buffer.from(signedPayrollXml).toString('base64');

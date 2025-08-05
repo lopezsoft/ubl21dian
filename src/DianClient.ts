@@ -27,6 +27,7 @@ export class DianClient {
 			xmlSigner: new XmlSigner(),
 			payrollSigner: new PayrollSigner(),
 			certificateData: {} as ICertificateData,
+			environment: options.environment
 		};
 	}
 
@@ -56,6 +57,7 @@ export class DianClient {
 		if (!this.isInitialized) {
 			throw new Error('El cliente no ha sido inicializado. Llama a initialize() primero.');
 		}
+		console.log(`Ejecutando comando: ${command.constructor.name} con parámetros:`, params);
 		return command.execute(this.services, params);
 	}
 }

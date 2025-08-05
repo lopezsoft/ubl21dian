@@ -1,6 +1,7 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { IHttpClient } from '../common/interfaces';
 import { DianEndpoints } from '../config/dianEndpoints';
+import * as fs from "node:fs";
 
 /**
  * Cliente para la comunicación con los servicios web SOAP de la DIAN.
@@ -9,14 +10,16 @@ import { DianEndpoints } from '../config/dianEndpoints';
  */
 export class SoapClient implements IHttpClient {
 	private readonly client: AxiosInstance;
-	private readonly environment: 'HABILITACION' | 'PRODUCCION';
+	private readonly environment: 2 | 1;
 
-	constructor(environment: 'HABILITACION' | 'PRODUCCION' = 'HABILITACION') {
+	constructor(environment: 2 | 1 = 1) {
 		this.environment = environment;
 		this.client = axios.create({
 			timeout: 30000, // 30 segundos de timeout
 			headers: {
-				'Content-Type': 'application/soap+xml;charset=UTF-8',
+				'Content-Type': 'application/soap+xml; charset=utf-8',
+				'Accept': 'application/xml',
+				'Connection': 'keep-alive',
 			},
 		});
 	}
@@ -28,12 +31,20 @@ export class SoapClient implements IHttpClient {
 	 * @param headers Los encabezados adicionales para la petición.
 	 * @returns Una promesa que se resuelve con la respuesta del servicio.
 	 */
-	public async post(data: any, headers: { [key: string]: string }): Promise<any> {
+	public async post(data: string, headers: { [key: string]: string }): Promise<any> {
 		const url = DianEndpoints[this.environment];
 		try {
-			const response = await this.client.post(url, data, { headers });
+			let xmlSinEspacios = data.replace(/[\n\t\r]/g, '');
+			xmlSinEspacios = xmlSinEspacios.replace(/>\s+</g, '><').trim();
+			// fs.writeFileSync('request.xml', xmlSinEspacios, 'utf8'); // Guardar el XML para depuración
+			headers['Content-Length'] = Buffer.byteLength(xmlSinEspacios).toString();
+			// Realiza la petición POST usando axios
+			const response = await this.client.post(url, xmlSinEspacios, { headers });
 			return response.data;
 		} catch (error) {
+			console.error('Error en la petición SOAP:', error);
+			console.error('--------------------------------------------------');
+			// Si el error es de tipo AxiosError, maneja el error HTTP
 			this.handleHttpError(error as AxiosError);
 		}
 	}
@@ -45,27 +56,38 @@ export class SoapClient implements IHttpClient {
 	 */
 	private handleHttpError(error: AxiosError): void {
 		if (error.code === 'ECONNABORTED') {
-			throw new Error('Error 504: Gateway Timeout. La conexión con la DIAN tardó demasiado.');
+			throw new Error('Error 504: Gateway Timeout. La conexión con la DIAN está tardando más de lo esperado. Por favor, ' +
+				'intente nuevamente. Si el problema persiste, contacte a soporte técnico.');
 		}
 
 		const status = error.response?.status;
-		const responseData = error.response?.data;
+		const responseDataString = error.response?.data ? JSON.stringify(error.response.data) : error.message;
 
 		let errorMessage = `Error HTTP ${status || 'desconocido'}: Ha ocurrido un error en la solicitud a la DIAN.`;
 		const additionalMessage = ' Por favor, intente de nuevo en un par de minutos.';
 
 		switch (status) {
 			case 500:
-				errorMessage = `Error 500: Internal Server Error. Problema en el servidor de la DIAN. Detalles: ${responseData}`;
+				errorMessage = `Error 500: Internal Server Error. Problema en el servidor de la DIAN. Detalles: ${responseDataString}`;
 				break;
 			case 503:
 				errorMessage = `Error 503: Service Unavailable. El servicio de la DIAN no está disponible.`;
+				break;
+			case 507:
+				errorMessage = `Error 507: Insufficient Storage. El servidor de la DIAN no tiene suficiente espacio.`;
+				break;
+			case 508:
+				errorMessage = `Error 508: Loop Detected. Se ha detectado un bucle en el servidor de la DIAN.`;
+				break;
+			case 504:
+				errorMessage = `Error 504: Gateway Timeout. La conexión con la DIAN está tardando más de lo esperado. Por favor, 
+				intente nuevamente. Si el problema persiste, contacte a soporte técnico.`;
 				break;
 			case 403:
 				errorMessage = `Error 403: Forbidden. El sitio de la DIAN podría estar deshabilitado.`;
 				break;
 		}
 
-		throw new Error(errorMessage + additionalMessage);
+		throw new Error(`${errorMessage}${additionalMessage}. Detalles técnicos: ${responseDataString}`);
 	}
 }

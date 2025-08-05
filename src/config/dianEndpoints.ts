@@ -5,9 +5,9 @@ export const DianEndpoints = {
 	/**
 	 * Ambiente de Habilitación (Pruebas).
 	 */
-	HABILITACION: 'https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc',
+	2: 'https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?wsdl',
 	/**
 	 * Ambiente de Producción.
 	 */
-	PRODUCCION: 'https://vpfe.dian.gov.co/WcfDianCustomerServices.svc',
+	1: 'https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl',
 };
