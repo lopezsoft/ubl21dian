@@ -56,7 +56,7 @@ export interface ISoapTemplate {
 // Opciones de configuración para el cliente.
 export interface IDianClientOptions {
 	passwordPsswrd?: string;
-	environment: 1 | 2; // 2 para HABILITACION, 1 para PRODUCCION
+	environment: number; // 2 para HABILITACION, 1 para PRODUCCION
 }
 
 
@@ -116,7 +116,7 @@ export interface ICommandServices {
 	xmlSigner: ISigner;
 	payrollSigner: ISigner;
 	certificateData: ICertificateData; // ICertificateData
-	environment: 1 | 2; // 1 para PRODUCCIÓN, 2 para HABILITACIÓN
+	environment: number; // 1 para PRODUCCIÓN, 2 para HABILITACIÓN
 }
 
 /**

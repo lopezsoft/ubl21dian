@@ -10,9 +10,9 @@ import * as fs from "node:fs";
  */
 export class SoapClient implements IHttpClient {
 	private readonly client: AxiosInstance;
-	private readonly environment: 2 | 1;
+	private readonly environment: number;
 
-	constructor(environment: 2 | 1 = 1) {
+	constructor(environment: number = 1) {
 		this.environment = environment;
 		this.client = axios.create({
 			timeout: 30000, // 30 segundos de timeout

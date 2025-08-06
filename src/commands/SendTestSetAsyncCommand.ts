@@ -1,6 +1,7 @@
 import {ICommand, ICommandServices, ISendNominaSyncParams} from '../common/interfaces';
 import { SendNominaSyncTemplate } from '../soap/templates/SendNominaSyncTemplate';
 import { fastXmlParser } from '../common/utils';
+import {DianEndpoints} from "../config/dianEndpoints";
 
 
 
@@ -9,7 +10,9 @@ import { fastXmlParser } from '../common/utils';
  */
 export class SendTestSetAsyncCommand implements ICommand<ISendNominaSyncParams, any> {
 	public async execute(services: ICommandServices, params: ISendNominaSyncParams): Promise<any> {
-		const signedPayrollXml = await services.payrollSigner.sign(params.unsignedPayrollXml, services.certificateData);
+		const action  = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSync';
+		const url     = DianEndpoints[services.environment];
+		const signedPayrollXml = services.payrollSigner.sign(params.unsignedPayrollXml, services.certificateData, action, url);
 		const contentFileBase64 = Buffer.from(signedPayrollXml).toString('base64');
 
 		const template = new SendNominaSyncTemplate();

@@ -1,13 +1,16 @@
 import {ICommand, ICommandServices, ISendEventParams} from '../common/interfaces';
 import { SendEventTemplate } from '../soap/templates/SendEventTemplate';
 import { fastXmlParser } from '../common/utils';
+import {DianEndpoints} from "../config/dianEndpoints";
 
 /**
  * Comando para ejecutar la operación SendEventUpdateStatus de la DIAN.
  */
 export class SendEventCommand implements ICommand<ISendEventParams, any> {
 	public async execute(services: ICommandServices, params: ISendEventParams): Promise<any> {
-		const signedEventXml = await services.xmlSigner.sign(params.unsignedEventXml, services.certificateData);
+		const action  = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSync';
+		const url     = DianEndpoints[services.environment];
+		const signedEventXml = services.xmlSigner.sign(params.unsignedEventXml, services.certificateData, action, url);
 		const contentFileBase64 = Buffer.from(signedEventXml).toString('base64');
 
 		const template = new SendEventTemplate();

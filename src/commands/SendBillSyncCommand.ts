@@ -1,12 +1,15 @@
 import {ICommand, ICommandServices, ISendBillSyncParams} from '../common/interfaces';
 import { SendBillSyncTemplate } from '../soap/templates/SendBillSyncTemplate';
 import { fastXmlParser } from '../common/utils';
+import {DianEndpoints} from "../config/dianEndpoints";
 /**
  * Comando para ejecutar la operación SendBillSync de la DIAN.
  */
 export class SendBillSyncCommand implements ICommand<ISendBillSyncParams, any> {
 	public async execute(services: ICommandServices, params: ISendBillSyncParams): Promise<any> {
-		const signedUblXml = await services.xmlSigner.sign(params.unsignedUblXml, services.certificateData);
+		const action  = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSync';
+		const url     = DianEndpoints[services.environment];
+		const signedUblXml = services.xmlSigner.sign(params.unsignedUblXml, services.certificateData, action, url);
 		const contentFileBase64 = Buffer.from(signedUblXml).toString('base64');
 
 		const template = new SendBillSyncTemplate();
@@ -18,10 +21,10 @@ export class SendBillSyncCommand implements ICommand<ISendBillSyncParams, any> {
 		const signedSoap = (services.soapSigner as any).sign(unsignedSoap, services.certificateData);
 
 		const responseXml = await services.soapClient.post(signedSoap, {
-			SOAPAction: 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSync',
+			action,
 		});
 
 		const parsedResponse = fastXmlParser.parse(responseXml);
-		return parsedResponse?.['s:Envelope']?.['s:Body']?.['SendBillSyncResponse']?.['SendBillSyncResult'];
+		return parsedResponse?.['Envelope']?.['Body']?.['SendBillSyncResponse']?.['SendBillSyncResult'];
 	}
 }
