@@ -3,10 +3,8 @@ import * as forge from 'node-forge';
 import {ICertificateData} from "../common/interfaces";
 
 export class Certificate {
-	private logger = console;
 	public async loadFromBuffer(p12Buffer: Buffer, password: string): Promise<ICertificateData> {
 		try {
-			this.logger.log('Cargando certificado desde el buffer...');
 			const p12Asn1 = forge.asn1.fromDer(p12Buffer.toString('binary'));
 			const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, false, password);
 

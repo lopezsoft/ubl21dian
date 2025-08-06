@@ -4,11 +4,11 @@ import { ExclusiveCanonicalization } from 'xml-crypto';
 import * as fs from 'fs'; // Usamos fs directamente
 
 // Asumiendo que estas interfaces y constantes están definidas correctamente en otra parte
-import { ICertificateData } from "../common/interfaces";
+import {ICertificateData, ISigner} from "../common/interfaces";
 import { ADDRESSING, BASE64BINARY, DIAN_COLOMBIA, EXC_C14N, RSA_SHA256, SHA256, SOAP_ENVELOPE, WSS_WSSECURITY, WSS_WSSECURITY_UTILITY, X509V3, XMLDSIG } from '../common/constants';
 import { removeDomChild } from "../common/utils";
 
-export class SoapSigner {
+export class SoapSigner implements ISigner {
 	private readonly ADDRESSING = ADDRESSING;
 	private readonly SOAP_ENVELOPE = SOAP_ENVELOPE;
 	private readonly DIAN_COLOMBIA = DIAN_COLOMBIA;

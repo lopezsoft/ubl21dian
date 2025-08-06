@@ -13,3 +13,9 @@ export const XML_VERSION = '1.0';
 export const XML_ENCODING = 'UTF-8';
 
 export const GET_ACQUIRER_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetAcquirer';
+export const GET_EXCHANGE_EMAILS_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetExchangeEmails';
+export const GET_NUMBERING_RANGE_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetNumberingRange';
+export const GET_REFERENCE_NOTES_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetReferenceNotes';
+export const GET_STATUS_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatus';
+export const GET_STATUS_ZIP_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatusZip';
+export const GET_XML_BY_DOCUMENT_KEY_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetXmlByDocumentKey';

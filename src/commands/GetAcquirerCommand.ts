@@ -13,7 +13,7 @@ export class GetAcquirerCommand implements ICommand<IGetAcquirerParams, any> {
 		const unsignedSoap = template.getXml(params);
 		const action = GET_ACQUIRER_ACTION;
 		const url = DianEndpoints[services.environment];
-		const signedSoap = (services.soapSigner as any).sign(unsignedSoap, services.certificateData, action, url);
+		const signedSoap = (services.soapSigner).sign(unsignedSoap, services.certificateData, action, url);
 
 		const responseXml = await services.soapClient.post(signedSoap, {
 			action: action,

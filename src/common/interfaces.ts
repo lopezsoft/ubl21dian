@@ -7,11 +7,13 @@
 export interface ISigner {
 	/**
 	 * Firma el contenido de un documento XML.
-	 * @param xml El contenido del documento XML a firmar, como una cadena de texto.
+	 * @param unsignedSoap El XML del sobre SOAP sin firmar.
 	 * @param certificateData Los datos del certificado que se utilizará para la firma.
+	 * @param action El valor del encabezado SOAP Action.
+	 * @param toValue El valor del encabezado SOAP To.
 	 * @returns Una promesa que se resuelve con el documento XML firmado como una cadena de texto.
 	 */
-	sign(xml: string, certificateData: ICertificateData): Promise<string>;
+	sign(unsignedSoap: string | any, certificateData: ICertificateData, action: string, toValue: string): string;
 }
 
 /**
@@ -110,7 +112,7 @@ export interface ISendBillAttachmentAsyncParams extends ITemplateParams {
  */
 export interface ICommandServices {
 	soapClient: IHttpClient;
-	soapSigner: ISigner; // Asumimos que SoapSigner también puede implementar ISigner
+	soapSigner: ISigner;
 	xmlSigner: ISigner;
 	payrollSigner: ISigner;
 	certificateData: ICertificateData; // ICertificateData

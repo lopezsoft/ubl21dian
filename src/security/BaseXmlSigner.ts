@@ -12,7 +12,7 @@ export abstract class BaseXmlSigner implements ISigner {
 	/**
 	 * El "Template Method" principal. Orquesta el proceso de firma.
 	 */
-	public async sign(xml: string, certificateData: ICertificateData): Promise<string> {
+	public sign(xml: string | any, certificateData: ICertificateData, action: string, toValue: string): string {
 		const preProcessedXml = this.preSigningTransform(xml);
 
 		const signature = new SignedXml();

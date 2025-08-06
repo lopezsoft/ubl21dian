@@ -24,8 +24,8 @@ export class DianClient {
 		this.services = {
 			soapClient: new SoapClient(options.environment),
 			soapSigner: new SoapSigner() as any, // Cast a ISigner si es necesario
-			xmlSigner: new XmlSigner(),
-			payrollSigner: new PayrollSigner(),
+			xmlSigner: new XmlSigner() as any,
+			payrollSigner: new PayrollSigner() as any,
 			certificateData: {} as ICertificateData,
 			environment: options.environment
 		};
@@ -41,7 +41,6 @@ export class DianClient {
 			options.passwordPsswrd
 		);
 		this.isInitialized = true;
-		console.log('Certificado cargado y cliente inicializado.');
 	}
 
 	/**
@@ -57,7 +56,6 @@ export class DianClient {
 		if (!this.isInitialized) {
 			throw new Error('El cliente no ha sido inicializado. Llama a initialize() primero.');
 		}
-		console.log(`Ejecutando comando: ${command.constructor.name} con parámetros:`, params);
 		return command.execute(this.services, params);
 	}
 }
