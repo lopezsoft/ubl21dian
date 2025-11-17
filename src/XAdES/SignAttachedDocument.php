@@ -350,6 +350,83 @@ class SignAttachedDocument extends Sign
     }
 
     /**
+     * Obtiene el monto de un impuesto específico formateado a 2 decimales.
+     * 
+     * @param string $taxId ID del impuesto (01, 03, 04, etc.)
+     * @return string Monto del impuesto con 2 decimales
+     */
+    private function getTaxAmount(string $taxId): string
+    {
+        $taxAmount = $this->getQuery("cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID={$taxId}]/cbc:TaxAmount", false)->nodeValue ?? '0.00';
+        return number_format((float)$taxAmount, 2, '.', '');
+    }
+
+    /**
+     * Obtiene el valor de LineExtensionAmount formateado a 2 decimales.
+     * 
+     * @return string Valor formateado con 2 decimales
+     */
+    private function getLineExtensionAmount(): string
+    {
+        return number_format((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue, 2, '.', '');
+    }
+
+    /**
+     * Obtiene el valor de PayableAmount formateado a 2 decimales.
+     * 
+     * @return string Valor formateado con 2 decimales
+     */
+    private function getPayableAmount(): string
+    {
+        return number_format((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue, 2, '.', '');
+    }
+
+    /**
+     * Obtiene los datos básicos del documento (ID, Fecha, Hora).
+     * 
+     * @return array Array con las claves 'id', 'date', 'time'
+     */
+    private function getBasicDocumentData(): array
+    {
+        return [
+            'id' => $this->getTag('ID', 0)->nodeValue,
+            'date' => $this->getTag('IssueDate', 0)->nodeValue,
+            'time' => $this->getTag('IssueTime', 0)->nodeValue,
+        ];
+    }
+
+    /**
+     * Obtiene los NITs del proveedor y cliente.
+     * 
+     * @return array Array con las claves 'supplier' y 'customer'
+     */
+    private function getPartyIdentifications(): array
+    {
+        return [
+            'supplier' => $this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue,
+            'customer' => $this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue,
+        ];
+    }
+
+    /**
+     * Construye la cadena base para CUFE/CUDE con los impuestos estándar.
+     * 
+     * @return string Cadena construida con los valores del documento
+     */
+    private function buildInvoiceHashString(): string
+    {
+        $basic = $this->getBasicDocumentData();
+        $parties = $this->getPartyIdentifications();
+        $lineExtension = $this->getLineExtensionAmount();
+        $payableAmount = $this->getPayableAmount();
+        $tax01 = $this->getTaxAmount('01');
+        $tax04 = $this->getTaxAmount('04');
+        $tax03 = $this->getTaxAmount('03');
+        
+        return "{$basic['id']}{$basic['date']}{$basic['time']}{$lineExtension}01{$tax01}04{$tax04}03{$tax03}{$payableAmount}{$parties['supplier']}{$parties['customer']}";
+    }
+
+    /**
      * Digest value XML.
      */
     private function digestValueXML()
@@ -392,9 +469,10 @@ class SignAttachedDocument extends Sign
      */
     private function cufe()
     {
-        $val    = "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}";
+        $baseString = $this->buildInvoiceHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $val = "{$baseString}{$this->technicalKey}{$profileId}";
         $this->getTag('UUID', 0)->nodeValue = hash('sha384', $val);
-        // $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->technicalKey}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
     }
 
     /**
@@ -402,11 +480,10 @@ class SignAttachedDocument extends Sign
      */
     private function cude()
     {
-        if(!is_null($this->contingency)){
-            $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
-            // $this->getTag('UUID', 1)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
-        }else{
-            $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01".($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'04'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00').'03'.($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00')."{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
-        }
+        $baseString = $this->buildInvoiceHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $cudeString = "{$baseString}{$this->pin}{$profileId}";
+        
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $cudeString);
     }
 }

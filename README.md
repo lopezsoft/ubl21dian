@@ -4,9 +4,31 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.1 (2025-11-17)
+
+**Extensión del fix crítico**: Esta versión extiende la corrección de formateo a 2 decimales a TODOS los archivos de firma XAdES.
+
+#### Changed
+- **Formateo completo a 2 decimales en todos los tipos de documentos**:
+  - `SignAttachedDocument.php` - CUFE/CUDE formateados correctamente
+  - `SignDocumentSupport.php` - CUDS, CUDE y eventos formateados correctamente
+  - `SignPayroll.php` - CUNE con valores de nómina formateados a 2 decimales
+
+#### Added
+- Métodos auxiliares reutilizables en `SignAttachedDocument.php`
+- Métodos auxiliares completos en `SignDocumentSupport.php` (CUDS + eventos)
+- Método específico `buildDocumentSupportHashString()` para documentos soporte
+
+#### Improved
+- Refactorización completa aplicada a todos los archivos XAdES
+- Consistencia total en formateo de 2 decimales en todos los tipos de documentos
+- Código más limpio y mantenible en toda la librería
+
+---
+
 ### Version 3.6.0 (2025-11-17)
 
-**⚠️ BREAKING FIX**: Esta versión corrige el cálculo de CUFE/CUDE para cumplir con la especificación de la DIAN (2 decimales exactos).
+**⚠️ BREAKING FIX**: Corrección del cálculo de CUFE/CUDE para cumplir con la especificación de la DIAN (2 decimales exactos en `SignInvoice.php`).
 
 #### Changed
 - **Formateo correcto de valores monetarios**: Todos los valores monetarios y de impuestos ahora se formatean con exactamente 2 decimales en el cálculo de CUFE/CUDE
@@ -28,6 +50,7 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 ---
 
 # Tags
+* **3.6.1**: Extensión del fix - Formateo a 2 decimales en TODOS los archivos XAdES (AttachedDocument, DocumentSupport, Payroll).
 * **3.6.0**: Fix crítico - Formateo correcto a 2 decimales para CUFE/CUDE. Refactorización de código.
 * **3.5.1**: Ajustes en la nómina de ajustes de eliminación.
 * **3.5.0**: Calcular y setear SoftwareSecurityCode, CUNE, URL de consulta CUNE en CodigoQR, función para obtener información del QR.

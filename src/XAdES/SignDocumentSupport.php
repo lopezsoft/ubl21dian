@@ -367,6 +367,150 @@ class SignDocumentSupport extends Sign
     }
 
     /**
+     * Obtiene el monto de un impuesto específico formateado a 2 decimales.
+     * 
+     * @param string $taxId ID del impuesto (01, 03, 04, etc.)
+     * @return string Monto del impuesto con 2 decimales
+     * @throws Exception
+     */
+    private function getTaxAmount(string $taxId): string
+    {
+        $taxAmount = $this->getQuery("cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID={$taxId}]/cbc:TaxAmount", false)->nodeValue ?? '0.00';
+        return number_format((float)$taxAmount, 2, '.', '');
+    }
+
+    /**
+     * Obtiene el valor de LineExtensionAmount formateado a 2 decimales.
+     * 
+     * @return string Valor formateado con 2 decimales
+     * @throws Exception
+     */
+    private function getLineExtensionAmount(): string
+    {
+        return number_format((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue, 2, '.', '');
+    }
+
+    /**
+     * Obtiene el valor de PayableAmount formateado a 2 decimales.
+     * 
+     * @return string Valor formateado con 2 decimales
+     * @throws Exception
+     */
+    private function getPayableAmount(): string
+    {
+        return number_format((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue, 2, '.', '');
+    }
+
+    /**
+     * Obtiene los datos básicos del documento (ID, Fecha, Hora).
+     * 
+     * @return array Array con las claves 'id', 'date', 'time'
+     * @throws Exception
+     */
+    private function getBasicDocumentData(): array
+    {
+        return [
+            'id' => $this->getTag('ID', 0)->nodeValue,
+            'date' => $this->getTag('IssueDate', 0)->nodeValue,
+            'time' => $this->getTag('IssueTime', 0)->nodeValue,
+        ];
+    }
+
+    /**
+     * Obtiene los NITs del proveedor y cliente.
+     * 
+     * @return array Array con las claves 'supplier' y 'customer'
+     * @throws Exception
+     */
+    private function getPartyIdentifications(): array
+    {
+        return [
+            'supplier' => $this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue,
+            'customer' => $this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue,
+        ];
+    }
+
+    /**
+     * Obtiene los datos de las partes involucradas en un evento (Sender y Receiver).
+     * 
+     * @return array Array con las claves 'sender' y 'receiver'
+     * @throws Exception
+     */
+    private function getEventPartyIdentifications(): array
+    {
+        return [
+            'sender' => $this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue,
+            'receiver' => $this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue,
+        ];
+    }
+
+    /**
+     * Obtiene los datos de respuesta del documento para eventos.
+     * 
+     * @return array Array con las claves 'responseCode', 'documentId', 'documentTypeCode'
+     * @throws Exception
+     */
+    private function getDocumentResponseData(): array
+    {
+        return [
+            'responseCode' => $this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue,
+            'documentId' => $this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue,
+            'documentTypeCode' => $this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue,
+        ];
+    }
+
+    /**
+     * Construye la cadena base para CUFE/CUDE con los impuestos estándar.
+     * 
+     * @return string Cadena construida con los valores del documento
+     * @throws Exception
+     */
+    private function buildInvoiceHashString(): string
+    {
+        $basic = $this->getBasicDocumentData();
+        $parties = $this->getPartyIdentifications();
+        $lineExtension = $this->getLineExtensionAmount();
+        $payableAmount = $this->getPayableAmount();
+        $tax01 = $this->getTaxAmount('01');
+        $tax04 = $this->getTaxAmount('04');
+        $tax03 = $this->getTaxAmount('03');
+        
+        return "{$basic['id']}{$basic['date']}{$basic['time']}{$lineExtension}01{$tax01}04{$tax04}03{$tax03}{$payableAmount}{$parties['supplier']}{$parties['customer']}";
+    }
+
+    /**
+     * Construye la cadena para CUDS (Documento Soporte).
+     * 
+     * @return string Cadena construida con los valores del documento
+     * @throws Exception
+     */
+    private function buildDocumentSupportHashString(): string
+    {
+        $basic = $this->getBasicDocumentData();
+        $parties = $this->getPartyIdentifications();
+        $lineExtension = $this->getLineExtensionAmount();
+        $payableAmount = $this->getPayableAmount();
+        $tax01 = $this->getTaxAmount('01');
+        
+        return "{$basic['id']}{$basic['date']}{$basic['time']}{$lineExtension}01{$tax01}{$payableAmount}{$parties['supplier']}{$parties['customer']}";
+    }
+
+    /**
+     * Construye la cadena para CUDE de eventos.
+     * 
+     * @return string Cadena construida con los valores del evento
+     * @throws Exception
+     */
+    private function buildEventHashString(): string
+    {
+        $basic = $this->getBasicDocumentData();
+        $parties = $this->getEventPartyIdentifications();
+        $docResponse = $this->getDocumentResponseData();
+        
+        return "{$basic['id']}{$basic['date']}{$basic['time']}{$parties['sender']}{$parties['receiver']}{$docResponse['responseCode']}{$docResponse['documentId']}{$docResponse['documentTypeCode']}{$this->pin}";
+    }
+
+    /**
      * Digest value XML.
      */
     private function digestValueXML(): void
@@ -449,7 +593,11 @@ class SignDocumentSupport extends Sign
      */
     private function cuds(): void
     {
-        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        $baseString = $this->buildDocumentSupportHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $cudsString = "{$baseString}{$this->pin}{$profileId}";
+        
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $cudsString);
         $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUDS(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
@@ -468,7 +616,11 @@ class SignDocumentSupport extends Sign
      */
     private function cude(): void
     {
-        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '04' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '03' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        $baseString = $this->buildInvoiceHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $cudeString = "{$baseString}{$this->pin}{$profileId}";
+        
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $cudeString);
         $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUDE(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
@@ -487,7 +639,7 @@ class SignDocumentSupport extends Sign
      */
     private function cudeevent(): void
     {
-        $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue}{$this->pin}");
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $this->buildEventHashString());
         $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUFEEVENT(), $this->getTag('QRCode', 0)->nodeValue);
     }
 
@@ -497,7 +649,7 @@ class SignDocumentSupport extends Sign
     public function ConsultarCUDEEVENT()
     {
         if (!is_null($this->pin))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue}{$this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue}{$this->pin}");
+            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', $this->buildEventHashString());
     }
 
     public function ConsultarCUFEEVENT()

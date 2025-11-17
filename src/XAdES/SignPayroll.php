@@ -470,13 +470,18 @@ class SignPayroll extends Sign
     {
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
 
+        // Formatear valores a 2 decimales
+        $devengadosTotal = number_format((float)($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+        $deduccionesTotal = number_format((float)($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+        $comprobanteTotal = number_format((float)($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+
         // CUNE
         $stringToHash = $this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')
             . $informacionGeneralNode->getAttribute('FechaGen')
             . $informacionGeneralNode->getAttribute('HoraGen')
-            . ($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00')
-            . ($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00')
-            . ($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00')
+            . $devengadosTotal
+            . $deduccionesTotal
+            . $comprobanteTotal
             . $this->getTag('Empleador', 0)->getAttribute('NIT')
             . ($this->getTag('Trabajador', 0, false)?->getAttribute('NumeroDocumento') ?? '0')
             . $informacionGeneralNode->getAttribute('TipoXML')
@@ -509,15 +514,20 @@ class SignPayroll extends Sign
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
         $tipoNota = $this->getTag('TipoNota', 0, false);
 
+        // Formatear valores a 2 decimales
+        $valDev = number_format((float)($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+        $valDed = number_format((float)($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+        $valTol = number_format((float)($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+
         return "NumNIE: {$this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')}\n" .
             "FecNIE: {$informacionGeneralNode->getAttribute('FechaGen')}\n" .
             "HorNIE: {$informacionGeneralNode->getAttribute('HoraGen')}\n" .
             ($tipoNota ? "TipoNota: {$tipoNota->nodeValue}\n" : "") .
             "NitNIE: {$this->getTag('Empleador', 0)->getAttribute('NIT')}\n" .
             "DocEmp: " . ($this->getTag('Trabajador', 0, false)?->getAttribute('NumeroDocumento') ?? '0') . "\n" .
-            "ValDev: " . ($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
-            "ValDed: " . ($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
-            "ValTol: " . ($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00') . "\n" .
+            "ValDev: {$valDev}\n" .
+            "ValDed: {$valDed}\n" .
+            "ValTol: {$valTol}\n" .
             "CUNE: {$informacionGeneralNode->getAttribute('CUNE')}\n" .
             $this->getTag('CodigoQR', 0)->nodeValue;
     }
