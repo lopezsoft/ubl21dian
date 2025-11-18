@@ -4,6 +4,32 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.2 (2025-11-18)
+
+**🔧 CORRECCIÓN CRÍTICA**: Implementación de truncado en lugar de redondeo para valores monetarios según especificación DIAN.
+
+#### Fixed
+- **Truncado correcto según DIAN**: Cambio de `number_format()` (redondeo) a `truncateDecimals()` (truncado)
+  - Especificación DIAN: "con decimales a dos (2) dígitos truncados"
+  - Nuevo método `truncateDecimals()` que usa `floor()` para truncar valores sin redondear
+  - **Ejemplo**: 12037.046 → 12037.04 (antes redondeaba a 12037.05)
+  - **Resuelve error FAD06**: "Valor del CUFE no está calculado correctamente"
+  
+#### Changed
+- Aplicado en **TODOS los archivos XAdES**:
+  - `SignInvoice.php` - CUFE/CUDE con truncado
+  - `SignAttachedDocument.php` - CUFE/CUDE con truncado
+  - `SignDocumentSupport.php` - CUDS/CUDE/Eventos con truncado
+  - `SignPayroll.php` - CUNE con truncado
+
+#### Technical
+- Implementación: `floor(value * 100) / 100` para truncar a 2 decimales
+- Cumplimiento total con especificación técnica de generación del CUFE
+
+**⚠️ Importante**: Esta corrección puede cambiar CUFEs/CUDEs existentes, pero es necesaria para cumplir con la especificación de la DIAN.
+
+---
+
 ### Version 3.6.1 (2025-11-17)
 
 **Extensión del fix crítico**: Esta versión extiende la corrección de formateo a 2 decimales a TODOS los archivos de firma XAdES.
@@ -50,6 +76,7 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 ---
 
 # Tags
+* **3.6.2**: Fix crítico - Truncado (no redondeo) según especificación DIAN. Resuelve error FAD06.
 * **3.6.1**: Extensión del fix - Formateo a 2 decimales en TODOS los archivos XAdES (AttachedDocument, DocumentSupport, Payroll).
 * **3.6.0**: Fix crítico - Formateo correcto a 2 decimales para CUFE/CUDE. Refactorización de código.
 * **3.5.1**: Ajustes en la nómina de ajustes de eliminación.

@@ -137,6 +137,21 @@ class SignPayroll extends Sign
     }
 
     /**
+     * Trunca un valor decimal a la cantidad de decimales especificada.
+     * NO redondea, simplemente trunca según especificación DIAN.
+     * 
+     * @param float $value Valor a truncar
+     * @param int $decimals Cantidad de decimales (default: 2)
+     * @return string Valor truncado como string
+     */
+    private function truncateDecimals(float $value, int $decimals = 2): string
+    {
+        $multiplier = pow(10, $decimals);
+        $truncated = floor($value * $multiplier) / $multiplier;
+        return number_format($truncated, $decimals, '.', '');
+    }
+
+    /**
      * Load XML.
      */
     protected function loadXML()
@@ -470,10 +485,10 @@ class SignPayroll extends Sign
     {
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
 
-        // Formatear valores a 2 decimales
-        $devengadosTotal = number_format((float)($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
-        $deduccionesTotal = number_format((float)($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
-        $comprobanteTotal = number_format((float)($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+        // Truncar valores a 2 decimales según especificación DIAN
+        $devengadosTotal = $this->truncateDecimals((float)($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00'), 2);
+        $deduccionesTotal = $this->truncateDecimals((float)($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00'), 2);
+        $comprobanteTotal = $this->truncateDecimals((float)($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00'), 2);
 
         // CUNE
         $stringToHash = $this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')
@@ -514,10 +529,10 @@ class SignPayroll extends Sign
         $informacionGeneralNode = $this->getTag('InformacionGeneral', 0);
         $tipoNota = $this->getTag('TipoNota', 0, false);
 
-        // Formatear valores a 2 decimales
-        $valDev = number_format((float)($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
-        $valDed = number_format((float)($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
-        $valTol = number_format((float)($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00'), 2, '.', '');
+        // Truncar valores a 2 decimales según especificación DIAN
+        $valDev = $this->truncateDecimals((float)($this->getTag('DevengadosTotal', 0, false)->nodeValue ?? '0.00'), 2);
+        $valDed = $this->truncateDecimals((float)($this->getTag('DeduccionesTotal', 0, false)->nodeValue ?? '0.00'), 2);
+        $valTol = $this->truncateDecimals((float)($this->getTag('ComprobanteTotal', 0, false)->nodeValue ?? '0.00'), 2);
 
         return "NumNIE: {$this->getTag('NumeroSecuenciaXML', 0)->getAttribute('Numero')}\n" .
             "FecNIE: {$informacionGeneralNode->getAttribute('FechaGen')}\n" .

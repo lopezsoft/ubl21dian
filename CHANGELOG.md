@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.2] - 2025-11-18
+
+### Fixed
+- **CORRECCIÓN CRÍTICA**: Implementación de truncado en lugar de redondeo para valores monetarios
+  - Según especificación DIAN: "con decimales a dos (2) dígitos truncados"
+  - Nuevo método `truncateDecimals()` que trunca valores usando `floor()` en lugar de redondear
+  - Aplicado en **todos los archivos XAdES**: `SignInvoice.php`, `SignAttachedDocument.php`, `SignDocumentSupport.php`, `SignPayroll.php`
+  - **Impacto**: Valores como 12037.046 ahora se truncan a 12037.04 (antes redondeaba a 12037.05)
+  - Resuelve error **FAD06** de la DIAN: "Valor del CUFE no está calculado correctamente"
+
+### Changed
+- Todos los métodos que calculan CUFE/CUDE/CUDS/CUNE ahora usan truncado estricto
+- Actualización de comentarios en métodos helper indicando uso de truncado según especificación DIAN
+
+### Technical Details
+- `truncateDecimals(float $value, int $decimals = 2)`: Multiplica por 10^decimales, aplica `floor()`, divide
+- Ejemplo: `floor(12037.046 * 100) / 100 = floor(1203704.6) / 100 = 1203704 / 100 = 12037.04`
+- Cumplimiento total con especificación técnica DIAN para generación de CUFE
+
 ## [3.6.1] - 2025-11-17
 
 ### Changed

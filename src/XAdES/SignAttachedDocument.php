@@ -350,35 +350,53 @@ class SignAttachedDocument extends Sign
     }
 
     /**
-     * Obtiene el monto de un impuesto específico formateado a 2 decimales.
+     * Trunca un valor decimal a la cantidad de decimales especificada.
+     * NO redondea, simplemente trunca según especificación DIAN.
+     * 
+     * @param float $value Valor a truncar
+     * @param int $decimals Cantidad de decimales (default: 2)
+     * @return string Valor truncado como string
+     */
+    private function truncateDecimals(float $value, int $decimals = 2): string
+    {
+        $multiplier = pow(10, $decimals);
+        $truncated = floor($value * $multiplier) / $multiplier;
+        return number_format($truncated, $decimals, '.', '');
+    }
+
+    /**
+     * Obtiene el monto de un impuesto específico truncado a 2 decimales.
+     * Según DIAN: "con decimales a dos (2) dígitos truncados"
      * 
      * @param string $taxId ID del impuesto (01, 03, 04, etc.)
-     * @return string Monto del impuesto con 2 decimales
+     * @return string Monto del impuesto truncado a 2 decimales
      */
     private function getTaxAmount(string $taxId): string
     {
         $taxAmount = $this->getQuery("cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID={$taxId}]/cbc:TaxAmount", false)->nodeValue ?? '0.00';
-        return number_format((float)$taxAmount, 2, '.', '');
+        return $this->truncateDecimals((float)$taxAmount, 2);
     }
 
     /**
-     * Obtiene el valor de LineExtensionAmount formateado a 2 decimales.
+     * Obtiene el valor de LineExtensionAmount truncado a 2 decimales.
+     * Según DIAN: "con decimales a dos (2) dígitos truncados"
      * 
-     * @return string Valor formateado con 2 decimales
+     * @return string Valor truncado a 2 decimales
      */
     private function getLineExtensionAmount(): string
     {
-        return number_format((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue, 2, '.', '');
+        return $this->truncateDecimals((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue, 2);
     }
 
     /**
-     * Obtiene el valor de PayableAmount formateado a 2 decimales.
+     * Obtiene el valor de PayableAmount truncado a 2 decimales.
+     * Según DIAN: "con decimales a dos (2) dígitos truncados"
      * 
-     * @return string Valor formateado con 2 decimales
+     * @return string Valor truncado a 2 decimales
      */
     private function getPayableAmount(): string
     {
-        return number_format((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue, 2, '.', '');
+        return $this->truncateDecimals((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue, 2);
     }
 
     /**
