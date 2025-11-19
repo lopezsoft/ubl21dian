@@ -4,6 +4,35 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.3 (2025-11-19)
+
+**🐛 HOTFIX**: Corregido bug crítico de precisión flotante en `truncateDecimals()`.
+
+#### Fixed
+- **Bug en truncateDecimals()**: La versión anterior causaba errores de precisión con operaciones de punto flotante
+  - Problema: `floor(value * 100) / 100` generaba imprecisiones como `3055556.0000000001`
+  - Solución: Nueva implementación usando `sprintf()` + `substr()` para truncado exacto basado en strings
+  - **Impacto**: CUFEs incorrectos cuando valores no tenían decimales (ej: `33000`) o tenían exactamente 2 decimales
+
+#### Changed
+- Método `truncateDecimals()` completamente reescrito en todos los archivos XAdES
+- Algoritmo mejorado: String manipulation en lugar de operaciones flotantes
+- Proceso: `sprintf('%.10f')` → `substr()` → `number_format()`
+
+#### Example
+```php
+// ❌ Antes (con bug de precisión flotante)
+33000 * 100 / 100 = 33000.0000000001 → CUFE incorrecto
+
+// ✅ Ahora (truncado exacto con strings)  
+sprintf('%.10f', 33000) = "33000.0000000000"
+substr() = "33000.00" → CUFE correcto
+```
+
+**⚠️ Actualización urgente recomendada** si sus documentos contienen valores sin decimales o con exactamente 2 decimales.
+
+---
+
 ### Version 3.6.2 (2025-11-18)
 
 **🔧 CORRECCIÓN CRÍTICA**: Implementación de truncado en lugar de redondeo para valores monetarios según especificación DIAN.
@@ -76,6 +105,7 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 ---
 
 # Tags
+* **3.6.3**: Hotfix - Bug de precisión flotante en truncateDecimals corregido. Actualización urgente recomendada.
 * **3.6.2**: Fix crítico - Truncado (no redondeo) según especificación DIAN. Resuelve error FAD06.
 * **3.6.1**: Extensión del fix - Formateo a 2 decimales en TODOS los archivos XAdES (AttachedDocument, DocumentSupport, Payroll).
 * **3.6.0**: Fix crítico - Formateo correcto a 2 decimales para CUFE/CUDE. Refactorización de código.

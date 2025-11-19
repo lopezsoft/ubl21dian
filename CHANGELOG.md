@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.3] - 2025-11-19
+
+### Fixed
+- **Bug crítico en truncateDecimals()**: Corregido problema de precisión de punto flotante
+  - Versión anterior usaba `floor(value * 100) / 100` que causaba errores de precisión
+  - Nueva implementación usa `sprintf()` y `substr()` para truncado exacto basado en strings
+  - Ejemplo: `33000` ahora se trunca correctamente a `33000.00` sin errores de precisión
+  - Resuelve CUFEs incorrectos cuando los valores no tienen decimales o tienen exactamente 2 decimales
+
+### Changed
+- Método `truncateDecimals()` reescrito en todos los archivos XAdES
+- Ahora usa manipulación de strings en lugar de operaciones de punto flotante
+- Algoritmo: `sprintf('%.10f')` → `substr()` → `number_format()`
+
+### Technical Details
+- Problema: `30555.56 * 100` podía resultar en `3055556.0000000001` por precisión flotante
+- Solución: Convertir a string con 10 decimales, truncar string, formatear resultado
+- Aplicado en: SignInvoice, SignAttachedDocument, SignDocumentSupport, SignPayroll
+
 ## [3.6.2] - 2025-11-18
 
 ### Fixed

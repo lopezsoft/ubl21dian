@@ -369,6 +369,7 @@ class SignDocumentSupport extends Sign
     /**
      * Trunca un valor decimal a la cantidad de decimales especificada.
      * NO redondea, simplemente trunca según especificación DIAN.
+     * Usa sprintf para evitar problemas de precisión de punto flotante.
      * 
      * @param float $value Valor a truncar
      * @param int $decimals Cantidad de decimales (default: 2)
@@ -376,9 +377,22 @@ class SignDocumentSupport extends Sign
      */
     private function truncateDecimals(float $value, int $decimals = 2): string
     {
-        $multiplier = pow(10, $decimals);
-        $truncated = floor($value * $multiplier) / $multiplier;
-        return number_format($truncated, $decimals, '.', '');
+        // Convertir a string con suficientes decimales para capturar el valor original
+        $stringValue = sprintf('%.10f', $value);
+        
+        // Encontrar la posición del punto decimal
+        $dotPos = strpos($stringValue, '.');
+        
+        if ($dotPos === false) {
+            // No hay punto decimal, agregar .00
+            return number_format($value, $decimals, '.', '');
+        }
+        
+        // Truncar en la posición deseada
+        $truncated = substr($stringValue, 0, $dotPos + $decimals + 1);
+        
+        // Asegurar que tenga exactamente los decimales requeridos
+        return number_format((float)$truncated, $decimals, '.', '');
     }
 
     /**
