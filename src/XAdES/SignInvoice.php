@@ -413,32 +413,47 @@ class SignInvoice extends Sign
     }
 
     /**
-     * Trunca un valor decimal a la cantidad de decimales especificada.
-     * NO redondea, simplemente trunca según especificación DIAN.
-     * Usa sprintf para evitar problemas de precisión de punto flotante.
+     * Trunca un valor decimal a exactamente 2 decimales según especificación DIAN.
+     * NO redondea, solo trunca. Siempre retorna exactamente 2 decimales.
      * 
      * @param float $value Valor a truncar
      * @param int $decimals Cantidad de decimales (default: 2)
-     * @return string Valor truncado como string
+     * @return string Valor truncado como string con exactamente 2 decimales
      */
     private function truncateDecimals(float $value, int $decimals = 2): string
     {
-        // Convertir a string con suficientes decimales para capturar el valor original
-        $stringValue = sprintf('%.10f', $value);
+        // Convertir a string con máxima precisión disponible
+        $stringValue = number_format($value, 6, '.', '');
         
-        // Encontrar la posición del punto decimal
+        // Eliminar ceros innecesarios del final
+        $stringValue = rtrim($stringValue, '0');
+        
+        // Eliminar punto si quedó al final (número entero)
+        $stringValue = rtrim($stringValue, '.');
+        
+        // Buscar posición del punto decimal
         $dotPos = strpos($stringValue, '.');
         
+        // Si no hay punto decimal (es un entero)
         if ($dotPos === false) {
-            // No hay punto decimal, agregar .00
-            return number_format($value, $decimals, '.', '');
+            // Agregar punto y los decimales requeridos
+            return $stringValue . '.' . str_repeat('0', $decimals);
         }
         
-        // Truncar en la posición deseada
-        $truncated = substr($stringValue, 0, $dotPos + $decimals + 1);
+        // Obtener parte entera y decimal
+        $integerPart = substr($stringValue, 0, $dotPos);
+        $decimalPart = substr($stringValue, $dotPos + 1);
         
-        // Asegurar que tenga exactamente los decimales requeridos
-        return number_format((float)$truncated, $decimals, '.', '');
+        // Truncar o rellenar la parte decimal
+        if (strlen($decimalPart) < $decimals) {
+            // Si tiene menos decimales, rellenar con ceros
+            $decimalPart = str_pad($decimalPart, $decimals, '0', STR_PAD_RIGHT);
+        } else {
+            // Si tiene más decimales, truncar (NO redondear)
+            $decimalPart = substr($decimalPart, 0, $decimals);
+        }
+        
+        return $integerPart . '.' . $decimalPart;
     }
 
     /**

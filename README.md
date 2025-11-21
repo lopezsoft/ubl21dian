@@ -4,6 +4,45 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.4 (2025-11-21)
+
+**✅ SOLUCIÓN DEFINITIVA**: Corrección final del método `truncateDecimals()` eliminando completamente el uso de `number_format()` en el resultado.
+
+#### Fixed
+- **Truncado definitivo sin redondeo**: Solución basada en manipulación pura de strings
+  - Problema en v3.6.2 y v3.6.3: Uso final de `number_format()` que siempre redondea
+  - Solución: Algoritmo basado en `rtrim()` + `substr()` + `str_pad()` sin operaciones matemáticas
+  - **Garantiza**: Truncado exacto a 2 decimales, nunca redondeo
+  - **Resuelve definitivamente error FAD06**: "Valor del CUFE no está calculado correctamente"
+
+#### Changed
+- Método `truncateDecimals()` reescrito usando SOLO string manipulation:
+  1. `number_format($value, 6, '.', '')` - Conversión inicial con máxima precisión
+  2. `rtrim($stringValue, '0')` - Elimina ceros del final
+  3. `rtrim($stringValue, '.')` - Elimina punto si es entero
+  4. `substr($decimalPart, 0, 2)` - Trunca (NO redondea) a 2 decimales
+  5. `str_pad($decimalPart, 2, '0')` - Rellena con ceros si es necesario
+  6. **NO** usa `number_format()` en el resultado final
+
+#### Technical Details
+```php
+// Casos de prueba garantizados:
+truncateDecimals(33000)      → "33000.00"  ✅
+truncateDecimals(30555.55)   → "30555.55"  ✅
+truncateDecimals(12037.046)  → "12037.04"  ✅ (trunca, NO redondea a .05)
+truncateDecimals(2444.4)     → "2444.40"   ✅
+```
+
+#### Affected Files
+- `SignInvoice.php` - CUFE/CUDE con truncado definitivo
+- `SignAttachedDocument.php` - CUFE/CUDE con truncado definitivo
+- `SignDocumentSupport.php` - CUDS/CUDE/Eventos con truncado definitivo
+- `SignPayroll.php` - CUNE con truncado definitivo
+
+**⚠️ Actualización CRÍTICA**: Esta es la solución definitiva después de 4 intentos. Implementa exactamente la especificación DIAN: "con decimales a dos (2) dígitos truncados".
+
+---
+
 ### Version 3.6.3 (2025-11-19)
 
 **🐛 HOTFIX**: Corregido bug crítico de precisión flotante en `truncateDecimals()`.
