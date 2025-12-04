@@ -5,6 +5,46 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.5] - 2025-12-03
+
+### Fixed
+- **ConsultarCUDS()**: Corregido para usar `buildDocumentSupportHashString()` con valores truncados a 2 decimales
+- **ConsultarCUDE()**: Corregido para usar `buildInvoiceHashString()` con valores truncados a 2 decimales
+- Ambos métodos públicos ahora aplican correctamente el truncado según especificación DIAN
+
+### Changed
+- Agregada validación de `$this->pin` con excepción en `ConsultarCUDS()` y `ConsultarCUDE()`
+- Agregado tipo de retorno `string` a ambos métodos
+
+### Technical Details
+- Los métodos públicos `ConsultarCUDS()` y `ConsultarCUDE()` no estaban aplicando el truncado a 2 decimales
+- Esto podía generar CUDS/CUDE incorrectos si el usuario llamaba directamente a estos métodos
+- Ahora reutilizan los métodos auxiliares `buildDocumentSupportHashString()` y `buildInvoiceHashString()` que ya incluyen truncado
+
+## [3.6.4] - 2025-11-21
+
+### Fixed
+- **SOLUCIÓN DEFINITIVA**: Corrección final del método `truncateDecimals()` eliminando completamente `number_format()` del resultado
+- El problema en v3.6.2 y v3.6.3 era que `number_format()` siempre redondea, incluso después de truncar
+- Resuelve definitivamente el error **FAD06** de la DIAN: "Valor del CUFE no está calculado correctamente"
+
+### Changed
+- Método `truncateDecimals()` reescrito usando SOLO manipulación de strings:
+  1. `number_format($value, 6, '.', '')` - Conversión inicial con máxima precisión
+  2. `rtrim($stringValue, '0')` - Elimina ceros del final
+  3. `rtrim($stringValue, '.')` - Elimina punto si es entero
+  4. `substr($decimalPart, 0, 2)` - Trunca (NO redondea) a 2 decimales
+  5. `str_pad($decimalPart, 2, '0')` - Rellena con ceros si es necesario
+  6. **NO** usa `number_format()` en el resultado final
+
+### Technical Details
+- Casos de prueba garantizados:
+  - `truncateDecimals(33000)` → `"33000.00"` ✅
+  - `truncateDecimals(30555.55)` → `"30555.55"` ✅
+  - `truncateDecimals(12037.046)` → `"12037.04"` ✅ (trunca, NO redondea a .05)
+  - `truncateDecimals(2444.4)` → `"2444.40"` ✅
+- Aplicado en: SignInvoice, SignAttachedDocument, SignDocumentSupport, SignPayroll
+
 ## [3.6.3] - 2025-11-19
 
 ### Fixed
