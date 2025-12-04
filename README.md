@@ -4,6 +4,25 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.5 (2025-12-03)
+
+**🐛 FIX**: Corrección de métodos públicos `ConsultarCUDS()` y `ConsultarCUDE()` en `SignDocumentSupport.php`.
+
+#### Fixed
+
+- **ConsultarCUDS()**: Ahora usa `buildDocumentSupportHashString()` con valores truncados a 2 decimales
+- **ConsultarCUDE()**: Ahora usa `buildInvoiceHashString()` con valores truncados a 2 decimales
+- Agregada validación de `$this->pin` con excepción en ambos métodos
+- Agregado tipo de retorno `string` a ambos métodos
+
+#### Technical Details
+
+Los métodos públicos `ConsultarCUDS()` y `ConsultarCUDE()` no estaban aplicando el truncado a 2 decimales, lo que podía generar hashes incorrectos si el usuario los llamaba directamente.
+
+**⚠️ Actualización recomendada** si utiliza los métodos `ConsultarCUDS()` o `ConsultarCUDE()` directamente.
+
+---
+
 ### Version 3.6.4 (2025-11-21)
 
 **✅ SOLUCIÓN DEFINITIVA**: Corrección final del método `truncateDecimals()` eliminando completamente el uso de `number_format()` en el resultado.

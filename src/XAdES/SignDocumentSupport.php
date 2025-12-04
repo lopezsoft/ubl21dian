@@ -649,12 +649,20 @@ class SignDocumentSupport extends Sign
     }
 
     /**
+     * Consulta el CUDS con valores truncados a 2 decimales según especificación DIAN.
      * @throws Exception
      */
-    public function ConsultarCUDS()
+    public function ConsultarCUDS(): string
     {
-        if (!is_null($this->pin))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        if (is_null($this->pin)) {
+            throw new Exception('El pin es requerido para la generación del CUDS');
+        }
+        
+        $baseString = $this->buildDocumentSupportHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $cudsString = "{$baseString}{$this->pin}{$profileId}";
+        
+        return $this->getTag('UUID', 0)->nodeValue = hash('sha384', $cudsString);
     }
 
     /**
@@ -672,12 +680,20 @@ class SignDocumentSupport extends Sign
     }
 
     /**
+     * Consulta el CUDE con valores truncados a 2 decimales según especificación DIAN.
      * @throws Exception
      */
-    public function ConsultarCUDE()
+    public function ConsultarCUDE(): string
     {
-        if (!is_null($this->pin))
-            return $this->getTag('UUID', 0)->nodeValue = hash('sha384', "{$this->getTag('ID', 0)->nodeValue}{$this->getTag('IssueDate', 0)->nodeValue}{$this->getTag('IssueTime', 0)->nodeValue}{$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue}01" . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=01]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '04' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=04]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . '03' . ($this->getQuery('cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID=03]/cbc:TaxAmount', false)->nodeValue ?? '0.00') . "{$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue}{$this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue}{$this->pin}{$this->getTag('ProfileExecutionID', 0)->nodeValue}");
+        if (is_null($this->pin)) {
+            throw new Exception('El pin es requerido para la generación del CUDE');
+        }
+        
+        $baseString = $this->buildInvoiceHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $cudeString = "{$baseString}{$this->pin}{$profileId}";
+        
+        return $this->getTag('UUID', 0)->nodeValue = hash('sha384', $cudeString);
     }
 
     /**
