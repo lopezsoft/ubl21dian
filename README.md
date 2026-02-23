@@ -4,6 +4,18 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.6 (2026-02-23)
+
+**🐛 FIX**: Mejorado el mensaje de error en `Client.php` cuando `curl_error()` retorna vacío.
+
+#### Fixed
+
+- **Client**: Cuando cURL falla y `curl_error()` no tiene descripción textual, el mensaje de error ahora incluye el `errno` de cURL y la URL destino, facilitando el diagnóstico de fallos de conectividad con los servicios DIAN.
+  - Antes: `Exception: Exception: Class Lopezsoft\UBL21dian\Client: `
+  - Ahora: `Exception: Class Lopezsoft\UBL21dian\Client: cURL errno 7. URL: https://...`
+
+---
+
 ### Version 3.6.5 (2025-12-03)
 
 **🐛 FIX**: Corrección de métodos públicos `ConsultarCUDS()` y `ConsultarCUDE()` en `SignDocumentSupport.php`.
@@ -163,6 +175,9 @@ substr() = "33000.00" → CUFE correcto
 ---
 
 # Tags
+* **3.6.6**: Fix - Mensaje de error cURL enriquecido con errno y URL cuando curl_error() está vacío.
+* **3.6.5**: Fix - Corrección métodos públicos ConsultarCUDS() y ConsultarCUDE() con truncado a 2 decimales.
+* **3.6.4**: Fix - Solución definitiva de truncateDecimals() eliminando number_format() del resultado.
 * **3.6.3**: Hotfix - Bug de precisión flotante en truncateDecimals corregido. Actualización urgente recomendada.
 * **3.6.2**: Fix crítico - Truncado (no redondeo) según especificación DIAN. Resuelve error FAD06.
 * **3.6.1**: Extensión del fix - Formateo a 2 decimales en TODOS los archivos XAdES (AttachedDocument, DocumentSupport, Payroll).
