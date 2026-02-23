@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.6] - 2026-02-23
+
+### Fixed
+- **Client**: Mejorado el mensaje de error cuando `curl_error()` retorna vacío. Ahora incluye el `errno` de cURL y la URL destino (`cURL errno X. URL: https://...`), facilitando el diagnóstico de fallos de conectividad con los servicios DIAN.
+
 ## [3.6.5] - 2025-12-03
 
 ### Fixed

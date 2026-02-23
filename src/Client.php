@@ -82,7 +82,11 @@ class Client
                $this->httpStatusCode = 504;
                $this->handleHttpErrors();
             }
-            throw new Exception('Class '.get_class($this).': '.curl_error($this->curl));
+            $errorMessage = curl_error($this->curl);
+            if ($errorMessage === '') {
+                $errorMessage = sprintf('cURL errno %d. URL: %s', $errorCode, $this->to);
+            }
+            throw new Exception('Class '.get_class($this).': '.$errorMessage);
         }
 
         $this->httpStatusCode = curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
