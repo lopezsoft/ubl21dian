@@ -4,6 +4,18 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.7 (2026-02-24)
+
+**🐛 FIX**: Validación del endpoint en `Client.php` antes de ejecutar cURL.
+
+#### Fixed
+
+- **Client**: Cuando `$template->To` llega vacío o nulo, ahora se lanza una excepción descriptiva inmediatamente, en lugar de fallar con el críptico `cURL errno 3. URL:` sin contexto.
+  - Antes: `cURL errno 3. URL: ` (no indica la causa raíz)
+  - Ahora: `La URL del servicio (To) no puede estar vacía. Verifique que está configurando correctamente el endpoint de la DIAN.`
+
+---
+
 ### Version 3.6.6 (2026-02-23)
 
 **🐛 FIX**: Mejorado el mensaje de error en `Client.php` cuando `curl_error()` retorna vacío.
@@ -175,6 +187,7 @@ substr() = "33000.00" → CUFE correcto
 ---
 
 # Tags
+* **3.6.7**: Fix - Validación de URL vacía en Client antes de ejecutar cURL. Excepción descriptiva cuando To está vacío.
 * **3.6.6**: Fix - Mensaje de error cURL enriquecido con errno y URL cuando curl_error() está vacío.
 * **3.6.5**: Fix - Corrección métodos públicos ConsultarCUDS() y ConsultarCUDE() con truncado a 2 decimales.
 * **3.6.4**: Fix - Solución definitiva de truncateDecimals() eliminando number_format() del resultado.
