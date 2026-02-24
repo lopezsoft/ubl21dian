@@ -4,6 +4,16 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.8 (2026-02-24)
+
+**🔄 CHANGE**: Fallback automático al endpoint de producción cuando `To` está vacío.
+
+#### Changed
+
+- **Client**: Si `$template->To` llega vacío o nulo, se asigna automáticamente `https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl` en lugar de lanzar una excepción.
+
+---
+
 ### Version 3.6.7 (2026-02-24)
 
 **🐛 FIX**: Validación del endpoint en `Client.php` antes de ejecutar cURL.
@@ -187,6 +197,7 @@ substr() = "33000.00" → CUFE correcto
 ---
 
 # Tags
+* **3.6.8**: Change - Fallback automático al endpoint de producción DIAN cuando To está vacío.
 * **3.6.7**: Fix - Validación de URL vacía en Client antes de ejecutar cURL. Excepción descriptiva cuando To está vacío.
 * **3.6.6**: Fix - Mensaje de error cURL enriquecido con errno y URL cuando curl_error() está vacío.
 * **3.6.5**: Fix - Corrección métodos públicos ConsultarCUDS() y ConsultarCUDE() con truncado a 2 decimales.

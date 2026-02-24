@@ -48,7 +48,7 @@ class Client
     public function __construct(Template $template)
     {
         if (empty($template->To)) {
-            throw new Exception('Class '.static::class.': La URL del servicio (To) no puede estar vacía. Verifique que está configurando correctamente el endpoint de la DIAN.');
+            $template->To = 'https://vpfe.dian.gov.co/WcfDianCustomerServices.svc?wsdl';
         }
 
         $this->curl = curl_init();
