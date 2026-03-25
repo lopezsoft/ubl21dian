@@ -1,4 +1,4 @@
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
 import { PayrollSigner } from '../../src/security/PayrollSigner';
 import { DocumentSupportSigner } from '../../src/security/DocumentSupportSigner';
 import { AdjustmentNoteSigner } from '../../src/security/AdjustmentNoteSigner';
@@ -125,7 +125,7 @@ beforeAll(() => {
 
 describe('PayrollSigner — Firma completa de NominaIndividual', () => {
   let signedXml: string;
-  let signedDoc: Document;
+  let signedDoc: any;
 
   beforeAll(() => {
     const signer = new PayrollSigner();
@@ -185,7 +185,7 @@ describe('PayrollSigner — Firma completa de NominaIndividual', () => {
 
 describe('PayrollSigner — Firma completa de NominaIndividualDeAjuste', () => {
   let signedXml: string;
-  let signedDoc: Document;
+  let signedDoc: any;
 
   beforeAll(() => {
     const signer = new PayrollSigner();
@@ -247,7 +247,7 @@ describe('PayrollSigner — Diferencia con firma UBL estándar', () => {
 
 describe('DocumentSupportSigner — Firma completa', () => {
   let signedXml: string;
-  let signedDoc: Document;
+  let signedDoc: any;
 
   beforeAll(() => {
     const signer = new DocumentSupportSigner();
@@ -281,7 +281,7 @@ describe('DocumentSupportSigner — Firma completa', () => {
 
 describe('AdjustmentNoteSigner — Firma completa', () => {
   let signedXml: string;
-  let signedDoc: Document;
+  let signedDoc: any;
 
   beforeAll(() => {
     const signer = new AdjustmentNoteSigner();
@@ -315,7 +315,7 @@ describe('Multi-algorithm — Firma con SHA1/SHA256/SHA512', () => {
     const doc = new DOMParser().parseFromString(signedXml, 'text/xml');
 
     const sigMethod = doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'SignatureMethod');
-    expect((sigMethod.item(0) as Element).getAttribute('Algorithm')).toContain('rsa-sha256');
+    expect((sigMethod.item(0) as any).getAttribute('Algorithm')).toContain('rsa-sha256');
   });
 
   it('debería firmar con SHA512 cuando se configura', () => {
@@ -325,7 +325,7 @@ describe('Multi-algorithm — Firma con SHA1/SHA256/SHA512', () => {
     const doc = new DOMParser().parseFromString(signedXml, 'text/xml');
 
     const sigMethod = doc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'SignatureMethod');
-    expect((sigMethod.item(0) as Element).getAttribute('Algorithm')).toContain('rsa-sha512');
+    expect((sigMethod.item(0) as any).getAttribute('Algorithm')).toContain('rsa-sha512');
   });
 
   it('SHA1 no debería ser soportado por xml-crypto v6 (rsa-sha1 deprecado)', () => {
@@ -341,9 +341,9 @@ describe('Multi-algorithm — Firma con SHA1/SHA256/SHA512', () => {
     const doc = new DOMParser().parseFromString(signedXml, 'text/xml');
 
     const certDigest = doc.getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'CertDigest');
-    const digestMethod = (certDigest.item(0) as Element)
+    const digestMethod = (certDigest.item(0) as any)
       .getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'DigestMethod');
-    expect((digestMethod.item(0) as Element).getAttribute('Algorithm')).toContain('sha512');
+    expect((digestMethod.item(0) as any).getAttribute('Algorithm')).toContain('sha512');
   });
 
   it('firmas con diferentes algoritmos deben producir SignatureValue diferentes', () => {

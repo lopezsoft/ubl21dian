@@ -1,4 +1,4 @@
-import { DOMParser, XMLSerializer } from 'xmldom';
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import { SignedXml } from 'xml-crypto';
 import * as forge from 'node-forge';
 import { ICertificateData, ISigner } from '../common/interfaces';
@@ -65,7 +65,7 @@ export abstract class BaseXmlSigner implements ISigner {
 		});
 
 		const signedXmlString = signature.getSignedXml();
-		const signedDoc = new DOMParser().parseFromString(signedXmlString);
+		const signedDoc = new DOMParser().parseFromString(signedXmlString, 'text/xml');
 		const signatureNode = signedDoc.getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'Signature')[0];
 
 		if (!signatureNode) {
@@ -119,13 +119,13 @@ export abstract class BaseXmlSigner implements ISigner {
 		});
 	}
 
-	private injectKeyInfo(signatureNode: Node, certData: ICertificateData): void {
+	private injectKeyInfo(signatureNode: any, certData: ICertificateData): void {
 		const keyInfoString = `<ds:KeyInfo xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:X509Data><ds:X509Certificate>${certData.x509CertificateBase64}</ds:X509Certificate></ds:X509Data></ds:KeyInfo>`;
-		const keyInfoNode = new DOMParser().parseFromString(keyInfoString).documentElement;
+		const keyInfoNode = new DOMParser().parseFromString(keyInfoString, 'text/xml').documentElement!;
 		signatureNode.appendChild(keyInfoNode);
 	}
 
-	private addXAdESObject(signatureNode: Node, certData: ICertificateData): void {
+	private addXAdESObject(signatureNode: any, certData: ICertificateData): void {
 		const cert = forge.pki.certificateFromPem(certData.publicKeyPem);
 		const md = this.algorithm.hash === 'sha512' ? forge.md.sha512.create()
 			: this.algorithm.hash === 'sha1' ? forge.md.sha1.create()
@@ -136,11 +136,11 @@ export abstract class BaseXmlSigner implements ISigner {
 		}));
 
 		const xadesFragmentString = this.buildXadesObjectString(signatureNode, cert, certDigest);
-		const xadesObjectNode = new DOMParser().parseFromString(xadesFragmentString).documentElement;
+		const xadesObjectNode = new DOMParser().parseFromString(xadesFragmentString, 'text/xml').documentElement!;
 		signatureNode.appendChild(xadesObjectNode);
 	}
 
-	private buildXadesObjectString(signatureNode: Node, cert: forge.pki.Certificate, certDigest: string): string {
+	private buildXadesObjectString(signatureNode: any, cert: forge.pki.Certificate, certDigest: string): string {
 		const issuerName = this.formatIssuerName(cert.issuer.attributes);
 		const serialNumber = cert.serialNumber;
 		const signatureId = (signatureNode as Element).getAttribute('Id') || `xmldsig-signature-${this.generateId()}`;

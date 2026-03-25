@@ -1,3 +1,5 @@
+import type { Document as XmlDocument } from '@xmldom/xmldom';
+
 /**
  * Tipos de documento electrónico soportados por la DIAN colombiana.
  */
@@ -169,13 +171,13 @@ export function detectDocumentType(xml: string): DocumentType {
  * Nota: AdjustmentNote no es distinguible de CreditNote por DOM,
  * ya que comparten elemento raíz y namespaces. Use setDocumentType() explícito.
  */
-export function detectDocumentTypeFromDom(doc: Document): DocumentType {
-  const rootName = doc.documentElement.nodeName;
+export function detectDocumentTypeFromDom(doc: XmlDocument): DocumentType {
+  const rootName = doc.documentElement!.nodeName;
   const localName = rootName.includes(':') ? rootName.split(':')[1] : rootName;
 
   switch (localName) {
     case 'Invoice': {
-      const stsNs = doc.documentElement.getAttribute('xmlns:sts');
+      const stsNs = doc.documentElement!.getAttribute('xmlns:sts');
       if (stsNs === 'urn:dian:gov:co:facturaelectronica:Structures-2-1') {
         return DocumentType.DocumentSupport;
       }

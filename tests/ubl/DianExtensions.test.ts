@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
 import {
   truncateDecimals,
   softwareSecurityCode,
@@ -158,7 +158,7 @@ describe('UBL Models — detectDocumentTypeFromDom', () => {
   });
 
   it('debería detectar DocumentSupport desde DOM por xmlns:sts URN', () => {
-    const dsXml = '<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:sts="urn:dian:gov:co:facturaelectronica:Structures-2-1"><cbc:ID>DS-001</cbc:ID></Invoice>';
+    const dsXml = '<Invoice xmlns="urn:oasis:names:specification:ubl:schema:xsd:Invoice-2" xmlns:cbc="urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2" xmlns:sts="urn:dian:gov:co:facturaelectronica:Structures-2-1"><cbc:ID>DS-001</cbc:ID></Invoice>';
     const doc = new DOMParser().parseFromString(dsXml, 'text/xml');
     expect(detectDocumentTypeFromDom(doc)).toBe(DocumentType.DocumentSupport);
   });
@@ -621,7 +621,7 @@ describe('DianExtensions — injectCune', () => {
     const cune = injectCune(doc, '12345');
 
     const infoGeneral = doc.getElementsByTagName('InformacionGeneral').item(0)!;
-    expect((infoGeneral as Element).getAttribute('CUNE')).toBe(cune);
+    expect((infoGeneral as any).getAttribute('CUNE')).toBe(cune);
   });
 
   it('debería actualizar CodigoQR con URL de habilitación (Ambiente=2)', () => {
@@ -659,7 +659,7 @@ describe('DianExtensions — injectPayrollSoftwareSecurityCode', () => {
     const code = injectPayrollSoftwareSecurityCode(doc, softwareID, pin);
 
     const proveedorXML = doc.getElementsByTagName('ProveedorXML').item(0)!;
-    expect((proveedorXML as Element).getAttribute('SoftwareSC')).toBe(code);
+    expect((proveedorXML as any).getAttribute('SoftwareSC')).toBe(code);
 
     // Fórmula: SHA384(softwareID + pin + NumeroSecuenciaXML/@Numero)
     const expectedCode = createHash('sha384')

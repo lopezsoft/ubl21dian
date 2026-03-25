@@ -1,4 +1,4 @@
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
 import { SoapSigner } from '../../src/security/SoapSigner';
 import { generateTestCertificate } from '../helpers/testCertificate';
 import { ICertificateData } from '../../src/common/interfaces';
@@ -23,7 +23,7 @@ const TO = 'https://vpfe-hab.dian.gov.co/WcfDianCustomerServices.svc?wsdl';
 
 let certData: ICertificateData;
 let signedXml: string;
-let signedDoc: Document;
+let signedDoc: any;
 
 // ---------------------------------------------------------------------------
 // Setup — genera certificado y firma una vez para todos los tests
@@ -61,7 +61,7 @@ describe('SoapSigner — Estructura del Header', () => {
     const to = signedDoc.getElementsByTagName('wsa:To');
     expect(to.length).toBe(1);
     expect(to.item(0)?.textContent).toBe(TO);
-    expect((to.item(0) as Element).getAttribute('wsu:Id')).toBeTruthy();
+    expect((to.item(0) as any).getAttribute('wsu:Id')).toBeTruthy();
   });
 
   it('debería contener wsu:Timestamp con Created y Expires', () => {
@@ -85,7 +85,7 @@ describe('SoapSigner — Estructura del Header', () => {
     const bst = signedDoc.getElementsByTagName('wsse:BinarySecurityToken');
     expect(bst.length).toBe(1);
     expect(bst.item(0)?.textContent).toBe(certData.x509CertificateBase64);
-    expect((bst.item(0) as Element).getAttribute('ValueType')).toContain('X509');
+    expect((bst.item(0) as any).getAttribute('ValueType')).toContain('X509');
   });
 
   it('debería eliminar el Header original y crear uno nuevo', () => {
@@ -103,7 +103,7 @@ describe('SoapSigner — Estructura de la Firma', () => {
   it('debería contener ds:Signature dentro de wsse:Security', () => {
     const security = signedDoc.getElementsByTagName('wsse:Security').item(0);
     expect(security).toBeDefined();
-    const signatures = (security as Element).getElementsByTagName('ds:Signature');
+    const signatures = (security as any).getElementsByTagName('ds:Signature');
     expect(signatures.length).toBe(1);
   });
 
@@ -113,34 +113,34 @@ describe('SoapSigner — Estructura de la Firma', () => {
 
     const canonMethod = signedDoc.getElementsByTagName('ds:CanonicalizationMethod');
     expect(canonMethod.length).toBe(1);
-    expect((canonMethod.item(0) as Element).getAttribute('Algorithm'))
+    expect((canonMethod.item(0) as any).getAttribute('Algorithm'))
       .toBe('http://www.w3.org/2001/10/xml-exc-c14n#');
 
     const sigMethod = signedDoc.getElementsByTagName('ds:SignatureMethod');
     expect(sigMethod.length).toBe(1);
-    expect((sigMethod.item(0) as Element).getAttribute('Algorithm'))
+    expect((sigMethod.item(0) as any).getAttribute('Algorithm'))
       .toBe('http://www.w3.org/2001/04/xmldsig-more#rsa-sha256');
   });
 
   it('debería tener Reference con URI que apunta a wsa:To', () => {
-    const toId = (signedDoc.getElementsByTagName('wsa:To').item(0) as Element)
+    const toId = (signedDoc.getElementsByTagName('wsa:To').item(0) as any)
       .getAttribute('wsu:Id');
     const reference = signedDoc.getElementsByTagName('ds:Reference');
     expect(reference.length).toBe(1);
-    expect((reference.item(0) as Element).getAttribute('URI')).toBe(`#${toId}`);
+    expect((reference.item(0) as any).getAttribute('URI')).toBe(`#${toId}`);
   });
 
   it('debería tener Transform con Exclusive C14N', () => {
     const transforms = signedDoc.getElementsByTagName('ds:Transform');
     expect(transforms.length).toBeGreaterThanOrEqual(1);
-    expect((transforms.item(0) as Element).getAttribute('Algorithm'))
+    expect((transforms.item(0) as any).getAttribute('Algorithm'))
       .toBe('http://www.w3.org/2001/10/xml-exc-c14n#');
   });
 
   it('debería tener DigestMethod SHA256', () => {
     const digestMethod = signedDoc.getElementsByTagName('ds:DigestMethod');
     expect(digestMethod.length).toBe(1);
-    expect((digestMethod.item(0) as Element).getAttribute('Algorithm'))
+    expect((digestMethod.item(0) as any).getAttribute('Algorithm'))
       .toBe('http://www.w3.org/2001/04/xmlenc#sha256');
   });
 
@@ -148,7 +148,7 @@ describe('SoapSigner — Estructura de la Firma', () => {
     const ns = signedDoc.getElementsByTagName('ec:InclusiveNamespaces');
     expect(ns.length).toBeGreaterThanOrEqual(1);
     // El primer PrefixList debería incluir 'wsa soap wcf'
-    const prefixList = (ns.item(0) as Element).getAttribute('PrefixList');
+    const prefixList = (ns.item(0) as any).getAttribute('PrefixList');
     expect(prefixList).toContain('wsa');
     expect(prefixList).toContain('soap');
     expect(prefixList).toContain('wcf');
@@ -207,7 +207,7 @@ describe('SoapSigner — KeyInfo', () => {
   it('debería contener ds:KeyInfo con Id', () => {
     const keyInfo = signedDoc.getElementsByTagName('ds:KeyInfo');
     expect(keyInfo.length).toBe(1);
-    expect((keyInfo.item(0) as Element).getAttribute('Id')).toBeTruthy();
+    expect((keyInfo.item(0) as any).getAttribute('Id')).toBeTruthy();
   });
 
   it('debería usar SecurityTokenReference (no X509Data directamente)', () => {
@@ -219,11 +219,11 @@ describe('SoapSigner — KeyInfo', () => {
   });
 
   it('debería tener wsse:Reference apuntando al BinarySecurityToken', () => {
-    const bstId = (signedDoc.getElementsByTagName('wsse:BinarySecurityToken').item(0) as Element)
+    const bstId = (signedDoc.getElementsByTagName('wsse:BinarySecurityToken').item(0) as any)
       .getAttribute('wsu:Id');
     const wsseRef = signedDoc.getElementsByTagName('wsse:Reference');
     expect(wsseRef.length).toBe(1);
-    expect((wsseRef.item(0) as Element).getAttribute('URI')).toBe(`#${bstId}`);
+    expect((wsseRef.item(0) as any).getAttribute('URI')).toBe(`#${bstId}`);
   });
 });
 
@@ -241,17 +241,17 @@ describe('SoapSigner — IDs únicos', () => {
     const doc1 = new DOMParser().parseFromString(signed1, 'text/xml');
     const doc2 = new DOMParser().parseFromString(signed2, 'text/xml');
 
-    const sigId1 = (doc1.getElementsByTagName('ds:Signature').item(0) as Element).getAttribute('Id');
-    const sigId2 = (doc2.getElementsByTagName('ds:Signature').item(0) as Element).getAttribute('Id');
+    const sigId1 = (doc1.getElementsByTagName('ds:Signature').item(0) as any).getAttribute('Id');
+    const sigId2 = (doc2.getElementsByTagName('ds:Signature').item(0) as any).getAttribute('Id');
     expect(sigId1).not.toBe(sigId2);
   });
 
   it('todos los IDs deben contener hash SHA1 en mayúsculas', () => {
-    const sigId = (signedDoc.getElementsByTagName('ds:Signature').item(0) as Element).getAttribute('Id')!;
+    const sigId = (signedDoc.getElementsByTagName('ds:Signature').item(0) as any).getAttribute('Id')!;
     // Formato: PREFIX-XXXXXXXX (SHA1 hex uppercase)
     expect(sigId).toMatch(/^SIG-[0-9A-F]+$/);
 
-    const bstId = (signedDoc.getElementsByTagName('wsse:BinarySecurityToken').item(0) as Element)
+    const bstId = (signedDoc.getElementsByTagName('wsse:BinarySecurityToken').item(0) as any)
       .getAttribute('wsu:Id')!;
     expect(bstId).toMatch(/^X509-[0-9A-F]+$/);
   });

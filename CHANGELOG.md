@@ -5,6 +5,23 @@ Todos los cambios notables en este proyecto serán documentados en este archivo.
 El formato está basado en [Keep a Changelog](https://keepachangelog.com/es-ES/1.0.0/),
 y este proyecto adhiere a [Semantic Versioning](https://semver.org/lang/es/).
 
+## [2.1.0] - 2026-03-25
+
+### Security
+- **`xmldom` → `@xmldom/xmldom` ^0.9.8** — Migrado del paquete abandonado `xmldom` al fork mantenido. Resuelve 2 vulnerabilidades críticas (múltiples nodos raíz, malinterpretación de XML malicioso)
+- **`fast-xml-parser` 4.x → 5.x** — Actualizado a v5.5.9. Resuelve 5 CVEs críticos (entity expansion DoS, regex injection, stack overflow)
+- **`node-forge` 1.3.1 → 1.4.0** — Resuelve 3 vulnerabilidades altas (ASN.1 recursion, OID truncation, validator desync)
+- **`axios` 1.11.0 → 1.13.6** — Resuelve 2 vulnerabilidades altas (DoS, prototype pollution)
+- **Dependencias transitivas** — `js-yaml`, `minimatch`, `picomatch` actualizadas vía `npm audit fix`
+- **0 vulnerabilidades** en `npm audit` post-actualización
+
+### Changed
+- Eliminado `@types/xmldom` (innecesario, `@xmldom/xmldom` incluye tipos propios)
+- Actualizado `@types/node-forge` a ^1.3.14
+- Actualizado `ts-jest` a ^29.4.6
+- Adaptados tipos DOM en `DianExtensions.ts`, `models.ts`, `utils.ts` para compatibilidad con `@xmldom/xmldom` v0.9
+- Corregido XML de test con namespace `xmlns:cbc` faltante (requerido por parser más estricto de @xmldom v0.9)
+
 ## [2.0.0] - 2026-03-25
 
 ### Added

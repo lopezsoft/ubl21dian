@@ -1,4 +1,5 @@
-import {XMLParser} from 'fast-xml-parser';
+import { XMLParser } from 'fast-xml-parser';
+import type { Document as XmlDocument } from '@xmldom/xmldom';
 
 export const fastXmlParser = new XMLParser({
 	ignoreAttributes: false,
@@ -7,16 +8,16 @@ export const fastXmlParser = new XMLParser({
 	removeNSPrefix: true, // Simplifica el objeto resultante
 });
 
-export function removeDomChild(document: Document, tagName: string, item: number = 0) {
-	const tag = document.documentElement.getElementsByTagName(tagName).item(item);
+export function removeDomChild(document: XmlDocument, tagName: string, item: number = 0) {
+	const tag = document.documentElement!.getElementsByTagName(tagName).item(item);
 	if (tag) {
-		document.documentElement.removeChild(tag);
+		document.documentElement!.removeChild(tag);
 	}
 	return document;
 }
 
-export function getDomTag(domDocument: Document, tagName: string, item: number = 0, validate: boolean = true) {
-	const tagList = domDocument.documentElement.getElementsByTagName(tagName);
+export function getDomTag(domDocument: XmlDocument, tagName: string, item: number = 0, validate: boolean = true) {
+	const tagList = domDocument.documentElement!.getElementsByTagName(tagName);
 	const tag = tagList.item(item);
 
 	if (validate && !tag) {

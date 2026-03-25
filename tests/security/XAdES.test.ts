@@ -1,4 +1,4 @@
-import { DOMParser } from 'xmldom';
+import { DOMParser } from '@xmldom/xmldom';
 import { BaseXmlSigner } from '../../src/security/BaseXmlSigner';
 import { XmlSigner } from '../../src/security/XmlSigner';
 import { PayrollSigner } from '../../src/security/PayrollSigner';
@@ -121,7 +121,7 @@ describe('XmlSigner — Auto-detección de tipo de documento', () => {
 
 describe('BaseXmlSigner — Firma XAdES', () => {
   let signedXml: string;
-  let signedDoc: Document;
+  let signedDoc: any;
 
   beforeAll(() => {
     const signer = new XmlSigner();
@@ -180,7 +180,7 @@ describe('BaseXmlSigner — Firma XAdES', () => {
     const certDigest = signedDoc.getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'CertDigest');
     expect(certDigest.length).toBe(1);
 
-    const digestValue = (certDigest.item(0) as Element)
+    const digestValue = (certDigest.item(0) as any)
       .getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'DigestValue');
     expect(digestValue.length).toBe(1);
     expect(digestValue.item(0)!.textContent!.length).toBeGreaterThan(0);
@@ -190,12 +190,12 @@ describe('BaseXmlSigner — Firma XAdES', () => {
     const issuerSerial = signedDoc.getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'IssuerSerial');
     expect(issuerSerial.length).toBe(1);
 
-    const issuerName = (issuerSerial.item(0) as Element)
+    const issuerName = (issuerSerial.item(0) as any)
       .getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'X509IssuerName');
     expect(issuerName.length).toBe(1);
     expect(issuerName.item(0)!.textContent).toContain('CN=');
 
-    const serialNumber = (issuerSerial.item(0) as Element)
+    const serialNumber = (issuerSerial.item(0) as any)
       .getElementsByTagNameNS('http://www.w3.org/2000/09/xmldsig#', 'X509SerialNumber');
     expect(serialNumber.length).toBe(1);
     expect(serialNumber.item(0)!.textContent!.length).toBeGreaterThan(0);
@@ -205,7 +205,7 @@ describe('BaseXmlSigner — Firma XAdES', () => {
     const policyId = signedDoc.getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'SigPolicyId');
     expect(policyId.length).toBe(1);
 
-    const identifier = (policyId.item(0) as Element)
+    const identifier = (policyId.item(0) as any)
       .getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'Identifier');
     expect(identifier.length).toBe(1);
     expect(identifier.item(0)!.textContent)
@@ -346,9 +346,9 @@ describe('BaseXmlSigner — Consistencia de firma', () => {
     const doc2 = new DOMParser().parseFromString(signed2, 'text/xml');
 
     const sp1 = doc1.getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'SignedProperties')
-      .item(0) as Element;
+      .item(0) as any;
     const sp2 = doc2.getElementsByTagNameNS('http://uri.etsi.org/01903/v1.3.2#', 'SignedProperties')
-      .item(0) as Element;
+      .item(0) as any;
 
     expect(sp1.getAttribute('Id')).not.toBe(sp2.getAttribute('Id'));
   });

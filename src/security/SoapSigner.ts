@@ -1,4 +1,4 @@
-import { DOMParser, XMLSerializer } from 'xmldom';
+import { DOMParser, XMLSerializer } from '@xmldom/xmldom';
 import * as crypto from 'crypto';
 import { ExclusiveCanonicalization } from 'xml-crypto';
 import { ICertificateData, ISigner } from '../common/interfaces';
@@ -195,7 +195,7 @@ export class SoapSigner implements ISigner {
 			inclusiveNamespacesPrefixList: 'soap wcf'
 		};
 		const c14n = new ExclusiveCanonicalization();
-		const canonicalizedXml = c14n.process(tempDoc.documentElement, options);
+		const canonicalizedXml = c14n.process(tempDoc.documentElement as any, options);
 
 		const hash = crypto.createHash('sha256').update(canonicalizedXml, 'utf-8').digest();
 		const digestValue = hash.toString('base64');
@@ -234,7 +234,7 @@ export class SoapSigner implements ISigner {
 
 		// 5. Canonicalizamos el documento temporal. Esta es la data que se firmará.
 		const c14n = new ExclusiveCanonicalization();
-		const canonicalizedXml = c14n.process(tempDoc.documentElement, {});
+		const canonicalizedXml = c14n.process(tempDoc.documentElement as any, {});
 
 		// 6. Creamos la firma.
 		const signer = crypto.createSign('RSA-SHA256');

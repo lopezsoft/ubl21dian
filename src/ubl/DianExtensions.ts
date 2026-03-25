@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import { XMLSerializer } from 'xmldom';
+import { XMLSerializer, Document as XmlDocument } from '@xmldom/xmldom';
 import { DocumentType, DOCUMENT_TYPE_CONFIG, detectDocumentType } from './models';
 import { QR_DOMAIN_HABILITACION, QR_DOMAIN_PRODUCCION } from '../common/constants';
 
@@ -42,7 +42,7 @@ export function truncateDecimals(value: number, decimals: number = 2): string {
 /**
  * Obtiene el contenido de texto de un tag XML por su nombre calificado (con prefijo).
  */
-function getTagText(doc: Document, tagName: string, item: number = 0): string {
+function getTagText(doc: XmlDocument, tagName: string, item: number = 0): string {
   const elements = doc.getElementsByTagName(tagName);
   const element = elements.item(item);
   if (!element) {
@@ -55,13 +55,13 @@ function getTagText(doc: Document, tagName: string, item: number = 0): string {
  * Obtiene el valor de un atributo de un elemento XML por nombre de tag.
  * Usado por la nómina (Payroll) donde los datos están en atributos, no nodos de texto.
  */
-function getElementAttribute(doc: Document, tagName: string, attrName: string, fallback?: string): string {
+function getElementAttribute(doc: XmlDocument, tagName: string, attrName: string, fallback?: string): string {
   const element = doc.getElementsByTagName(tagName).item(0);
   if (!element) {
     if (fallback !== undefined) return fallback;
     throw new Error(`Tag XML no encontrado: ${tagName}`);
   }
-  const value = (element as Element).getAttribute(attrName);
+  const value = (element as any).getAttribute(attrName);
   if (value === null || value === '') {
     if (fallback !== undefined) return fallback;
     throw new Error(`Atributo '${attrName}' no encontrado en <${tagName}>`);
@@ -72,7 +72,7 @@ function getElementAttribute(doc: Document, tagName: string, attrName: string, f
 /**
  * Obtiene el texto de un tag, retornando fallback si no existe.
  */
-function getTagTextOptional(doc: Document, tagName: string, fallback: string = ''): string {
+function getTagTextOptional(doc: XmlDocument, tagName: string, fallback: string = ''): string {
   const element = doc.getElementsByTagName(tagName).item(0);
   return element?.textContent?.trim() || fallback;
 }
@@ -95,18 +95,18 @@ function getTagTextOptional(doc: Document, tagName: string, fallback: string = '
  * </cac:TaxTotal>
  * ```
  */
-function getTaxAmount(doc: Document, taxCode: string): string {
+function getTaxAmount(doc: XmlDocument, taxCode: string): string {
   const taxTotals = doc.getElementsByTagName('cac:TaxTotal');
   for (let i = 0; i < taxTotals.length; i++) {
     const taxTotal = taxTotals.item(i);
     if (!taxTotal) continue;
-    const ids = (taxTotal as Element).getElementsByTagName('cbc:ID');
+    const ids = (taxTotal as any).getElementsByTagName('cbc:ID');
     for (let j = 0; j < ids.length; j++) {
       const idNode = ids.item(j);
       if (!idNode) continue;
       const parent = idNode.parentNode;
       if (parent && parent.nodeName === 'cac:TaxScheme' && (idNode.textContent || '').trim() === taxCode) {
-        const taxAmounts = (taxTotal as Element).getElementsByTagName('cbc:TaxAmount');
+        const taxAmounts = (taxTotal as any).getElementsByTagName('cbc:TaxAmount');
         return taxAmounts.item(0)?.textContent?.trim() || '0.00';
       }
     }
@@ -114,7 +114,7 @@ function getTaxAmount(doc: Document, taxCode: string): string {
   return '0.00';
 }
 
-function getBasicDocumentData(doc: Document): { id: string; date: string; time: string } {
+function getBasicDocumentData(doc: XmlDocument): { id: string; date: string; time: string } {
   return {
     id: getTagText(doc, 'cbc:ID', 0),
     date: getTagText(doc, 'cbc:IssueDate', 0),
@@ -122,7 +122,7 @@ function getBasicDocumentData(doc: Document): { id: string; date: string; time: 
   };
 }
 
-function getPartyIdentifications(doc: Document): { supplier: string; customer: string } {
+function getPartyIdentifications(doc: XmlDocument): { supplier: string; customer: string } {
   const supplierParty = doc.getElementsByTagName('cac:AccountingSupplierParty').item(0);
   const customerParty = doc.getElementsByTagName('cac:AccountingCustomerParty').item(0);
 
@@ -130,27 +130,27 @@ function getPartyIdentifications(doc: Document): { supplier: string; customer: s
   let customerNit = '';
 
   if (supplierParty) {
-    const companyIds = (supplierParty as Element).getElementsByTagName('cbc:CompanyID');
+    const companyIds = (supplierParty as any).getElementsByTagName('cbc:CompanyID');
     supplierNit = companyIds.item(0)?.textContent?.trim() || '';
   }
   if (customerParty) {
-    const companyIds = (customerParty as Element).getElementsByTagName('cbc:CompanyID');
+    const companyIds = (customerParty as any).getElementsByTagName('cbc:CompanyID');
     customerNit = companyIds.item(0)?.textContent?.trim() || '';
   }
 
   return { supplier: supplierNit, customer: customerNit };
 }
 
-function getLineExtensionAmount(doc: Document, groupOfTotals: string): string {
+function getLineExtensionAmount(doc: XmlDocument, groupOfTotals: string): string {
   const totals = doc.getElementsByTagName(`cac:${groupOfTotals}`).item(0);
   if (!totals) throw new Error(`Grupo de totales no encontrado: cac:${groupOfTotals}`);
-  return (totals as Element).getElementsByTagName('cbc:LineExtensionAmount').item(0)?.textContent?.trim() || '0.00';
+  return (totals as any).getElementsByTagName('cbc:LineExtensionAmount').item(0)?.textContent?.trim() || '0.00';
 }
 
-function getPayableAmount(doc: Document, groupOfTotals: string): string {
+function getPayableAmount(doc: XmlDocument, groupOfTotals: string): string {
   const totals = doc.getElementsByTagName(`cac:${groupOfTotals}`).item(0);
   if (!totals) throw new Error(`Grupo de totales no encontrado: cac:${groupOfTotals}`);
-  return (totals as Element).getElementsByTagName('cbc:PayableAmount').item(0)?.textContent?.trim() || '0.00';
+  return (totals as any).getElementsByTagName('cbc:PayableAmount').item(0)?.textContent?.trim() || '0.00';
 }
 
 /**
@@ -158,7 +158,7 @@ function getPayableAmount(doc: Document, groupOfTotals: string): string {
  * Fórmula PHP (buildInvoiceHashString):
  *   ID + Date + Time + LineExtAmt + "01" + Tax01 + "04" + Tax04 + "03" + Tax03 + PayableAmt + SupplierNIT + CustomerNIT
  */
-function buildInvoiceHashString(doc: Document, groupOfTotals: string): string {
+function buildInvoiceHashString(doc: XmlDocument, groupOfTotals: string): string {
   const basic = getBasicDocumentData(doc);
   const parties = getPartyIdentifications(doc);
   const lineExtension = getLineExtensionAmount(doc, groupOfTotals);
@@ -177,7 +177,7 @@ function buildInvoiceHashString(doc: Document, groupOfTotals: string): string {
  *
  * Diferencia con CUFE/CUDE: solo incluye impuesto 01 (IVA), no 04 ni 03.
  */
-function buildDocumentSupportHashString(doc: Document, groupOfTotals: string): string {
+function buildDocumentSupportHashString(doc: XmlDocument, groupOfTotals: string): string {
   const basic = getBasicDocumentData(doc);
   const parties = getPartyIdentifications(doc);
   const lineExtension = getLineExtensionAmount(doc, groupOfTotals);
@@ -210,7 +210,7 @@ export function softwareSecurityCode(softwareID: string, pin: string, documentID
  *
  * Réplica de `cufe()` de SignInvoice.php.
  */
-export function calculateCufe(doc: Document, technicalKey: string, groupOfTotals: string = 'LegalMonetaryTotal'): string {
+export function calculateCufe(doc: XmlDocument, technicalKey: string, groupOfTotals: string = 'LegalMonetaryTotal'): string {
   const baseString = buildInvoiceHashString(doc, groupOfTotals);
   const profileId = getTagText(doc, 'cbc:ProfileExecutionID', 0);
   return createHash('sha384').update(`${baseString}${technicalKey}${profileId}`).digest('hex');
@@ -225,7 +225,7 @@ export function calculateCufe(doc: Document, technicalKey: string, groupOfTotals
  *
  * Réplica de `cude()` de SignInvoice.php.
  */
-export function calculateCude(doc: Document, pin: string, groupOfTotals: string = 'LegalMonetaryTotal'): string {
+export function calculateCude(doc: XmlDocument, pin: string, groupOfTotals: string = 'LegalMonetaryTotal'): string {
   const baseString = buildInvoiceHashString(doc, groupOfTotals);
   const profileId = getTagText(doc, 'cbc:ProfileExecutionID', 0);
   return createHash('sha384').update(`${baseString}${pin}${profileId}`).digest('hex');
@@ -243,7 +243,7 @@ export function calculateCude(doc: Document, pin: string, groupOfTotals: string 
  *
  * Réplica de `cuds()` de SignDocumentSupport.php.
  */
-export function calculateCuds(doc: Document, pin: string, groupOfTotals: string = 'LegalMonetaryTotal'): string {
+export function calculateCuds(doc: XmlDocument, pin: string, groupOfTotals: string = 'LegalMonetaryTotal'): string {
   const baseString = buildDocumentSupportHashString(doc, groupOfTotals);
   const profileId = getTagText(doc, 'cbc:ProfileExecutionID', 0);
   return createHash('sha384').update(`${baseString}${pin}${profileId}`).digest('hex');
@@ -272,8 +272,8 @@ export interface IUuidInjectionOptions {
  *
  * @returns El UUID calculado (hash hex de 96 caracteres).
  */
-export function injectUuid(doc: Document, options: IUuidInjectionOptions): string {
-  const xmlStr = new XMLSerializer().serializeToString(doc);
+export function injectUuid(doc: XmlDocument, options: IUuidInjectionOptions): string {
+  const xmlStr = new XMLSerializer().serializeToString(doc as any);
   const docType = options.documentType ?? detectDocumentType(xmlStr);
   const config = DOCUMENT_TYPE_CONFIG[docType];
 
@@ -318,7 +318,7 @@ export function injectUuid(doc: Document, options: IUuidInjectionOptions): strin
  *
  * @returns El código de seguridad calculado.
  */
-export function injectSoftwareSecurityCode(doc: Document, softwareID: string, pin: string): string {
+export function injectSoftwareSecurityCode(doc: XmlDocument, softwareID: string, pin: string): string {
   const docId = getTagText(doc, 'cbc:ID', 0);
   const securityCode = softwareSecurityCode(softwareID, pin, docId);
   const sscElement = doc.getElementsByTagName('sts:SoftwareSecurityCode').item(0);
@@ -343,7 +343,7 @@ export function injectSoftwareSecurityCode(doc: Document, softwareID: string, pi
  *
  * Réplica de `getCUNE()` de SignPayroll.php.
  */
-export function calculateCune(doc: Document, pin: string): string {
+export function calculateCune(doc: XmlDocument, pin: string): string {
   const numero = getElementAttribute(doc, 'NumeroSecuenciaXML', 'Numero');
   const fechaGen = getElementAttribute(doc, 'InformacionGeneral', 'FechaGen');
   const horaGen = getElementAttribute(doc, 'InformacionGeneral', 'HoraGen');
@@ -366,12 +366,12 @@ export function calculateCune(doc: Document, pin: string): string {
  *
  * @returns El CUNE calculado.
  */
-export function injectCune(doc: Document, pin: string): string {
+export function injectCune(doc: XmlDocument, pin: string): string {
   const cune = calculateCune(doc, pin);
 
   const infoGeneral = doc.getElementsByTagName('InformacionGeneral').item(0);
   if (infoGeneral) {
-    (infoGeneral as Element).setAttribute('CUNE', cune);
+    (infoGeneral as any).setAttribute('CUNE', cune);
   }
 
   const ambiente = getElementAttribute(doc, 'InformacionGeneral', 'Ambiente');
@@ -395,13 +395,13 @@ export function injectCune(doc: Document, pin: string): string {
  *
  * @returns El código de seguridad calculado.
  */
-export function injectPayrollSoftwareSecurityCode(doc: Document, softwareID: string, pin: string): string {
+export function injectPayrollSoftwareSecurityCode(doc: XmlDocument, softwareID: string, pin: string): string {
   const numero = getElementAttribute(doc, 'NumeroSecuenciaXML', 'Numero');
   const securityCode = softwareSecurityCode(softwareID, pin, numero);
 
   const proveedorXML = doc.getElementsByTagName('ProveedorXML').item(0);
   if (proveedorXML) {
-    (proveedorXML as Element).setAttribute('SoftwareSC', securityCode);
+    (proveedorXML as any).setAttribute('SoftwareSC', securityCode);
   }
 
   return securityCode;
@@ -421,7 +421,7 @@ export function injectPayrollSoftwareSecurityCode(doc: Document, softwareID: str
  *
  * Réplica de `cudeevent()` (buildEventHashString) de SignInvoice.php.
  */
-export function calculateCudeEvent(doc: Document, pin: string): string {
+export function calculateCudeEvent(doc: XmlDocument, pin: string): string {
   const id = getTagText(doc, 'cbc:ID', 0);
   const date = getTagText(doc, 'cbc:IssueDate', 0);
   const time = getTagText(doc, 'cbc:IssueTime', 0);
@@ -429,13 +429,13 @@ export function calculateCudeEvent(doc: Document, pin: string): string {
   // SenderParty/PartyTaxScheme/CompanyID
   const senderParty = doc.getElementsByTagName('cac:SenderParty').item(0);
   const senderNit = senderParty
-    ? (senderParty as Element).getElementsByTagName('cbc:CompanyID').item(0)?.textContent?.trim() || ''
+    ? (senderParty as any).getElementsByTagName('cbc:CompanyID').item(0)?.textContent?.trim() || ''
     : '';
 
   // ReceiverParty/PartyTaxScheme/CompanyID
   const receiverParty = doc.getElementsByTagName('cac:ReceiverParty').item(0);
   const receiverNit = receiverParty
-    ? (receiverParty as Element).getElementsByTagName('cbc:CompanyID').item(0)?.textContent?.trim() || ''
+    ? (receiverParty as any).getElementsByTagName('cbc:CompanyID').item(0)?.textContent?.trim() || ''
     : '';
 
   // cac:DocumentResponse/cac:Response/cbc:ResponseCode
@@ -444,13 +444,13 @@ export function calculateCudeEvent(doc: Document, pin: string): string {
   // cac:DocumentResponse/cac:DocumentReference/cbc:ID
   const docResponse = doc.getElementsByTagName('cac:DocumentResponse').item(0);
   const docRef = docResponse
-    ? (docResponse as Element).getElementsByTagName('cac:DocumentReference').item(0)
+    ? (docResponse as any).getElementsByTagName('cac:DocumentReference').item(0)
     : null;
   const docRefId = docRef
-    ? (docRef as Element).getElementsByTagName('cbc:ID').item(0)?.textContent?.trim() || ''
+    ? (docRef as any).getElementsByTagName('cbc:ID').item(0)?.textContent?.trim() || ''
     : '';
   const docTypeCode = docRef
-    ? (docRef as Element).getElementsByTagName('cbc:DocumentTypeCode').item(0)?.textContent?.trim() || ''
+    ? (docRef as any).getElementsByTagName('cbc:DocumentTypeCode').item(0)?.textContent?.trim() || ''
     : '';
 
   const hashString = `${id}${date}${time}${senderNit}${receiverNit}${responseCode}${docRefId}${docTypeCode}${pin}`;
@@ -466,7 +466,7 @@ export function calculateCudeEvent(doc: Document, pin: string): string {
  *
  * @returns El CUDE calculado.
  */
-export function injectCudeEvent(doc: Document, pin: string): string {
+export function injectCudeEvent(doc: XmlDocument, pin: string): string {
   const cude = calculateCudeEvent(doc, pin);
 
   const uuidElement = doc.getElementsByTagName('cbc:UUID').item(0);
@@ -478,7 +478,7 @@ export function injectCudeEvent(doc: Document, pin: string): string {
   // En el PHP: ConsultarCUFEEVENT() lee cac:DocumentReference/cbc:UUID
   const docResponse = doc.getElementsByTagName('cac:DocumentResponse').item(0);
   const docRefUuid = docResponse
-    ? (docResponse as Element).getElementsByTagName('cbc:UUID').item(0)?.textContent?.trim() || ''
+    ? (docResponse as any).getElementsByTagName('cbc:UUID').item(0)?.textContent?.trim() || ''
     : '';
 
   const profileId = getTagTextOptional(doc, 'cbc:ProfileExecutionID', '1');
@@ -523,7 +523,7 @@ export function injectCudeEvent(doc: Document, pin: string): string {
  *
  * Réplica de `getQRData()` de SignInvoice.php.
  */
-export function getQRDataInvoice(doc: Document, groupOfTotals: string = 'LegalMonetaryTotal'): string {
+export function getQRDataInvoice(doc: XmlDocument, groupOfTotals: string = 'LegalMonetaryTotal'): string {
   const basic = getBasicDocumentData(doc);
   const parties = getPartyIdentifications(doc);
   const lineExtension = getLineExtensionAmount(doc, groupOfTotals);
@@ -576,7 +576,7 @@ export function getQRDataInvoice(doc: Document, groupOfTotals: string = 'LegalMo
  *
  * Réplica de `getQRData()` de SignPayroll.php.
  */
-export function getQRDataPayroll(doc: Document): string {
+export function getQRDataPayroll(doc: XmlDocument): string {
   const numero = getElementAttribute(doc, 'NumeroSecuenciaXML', 'Numero');
   const fechaGen = getElementAttribute(doc, 'InformacionGeneral', 'FechaGen');
   const horaGen = getElementAttribute(doc, 'InformacionGeneral', 'HoraGen');
