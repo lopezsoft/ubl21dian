@@ -8,13 +8,13 @@ import {
 	ICommand,
 	ICommandServices,
 	IDianClientInitializeOptions,
-	IDianClientOptions
+	IDianClientOptions,
+	ISigner
 } from './common/interfaces';
 
 /**
  * FACADE: Punto de entrada principal a la librería.
  * Proporciona una interfaz simple para un subsistema complejo (firma, SOAP, etc.).
- * Su responsabilidad es gestionar los servicios y ejecutar los comandos.
  */
 export class DianClient {
 	private readonly services: ICommandServices;
@@ -23,9 +23,9 @@ export class DianClient {
 	constructor(public options: IDianClientOptions) {
 		this.services = {
 			soapClient: new SoapClient(options.environment),
-			soapSigner: new SoapSigner() as any, // Cast a ISigner si es necesario
-			xmlSigner: new XmlSigner() as any,
-			payrollSigner: new PayrollSigner() as any,
+			soapSigner: new SoapSigner() as ISigner,
+			xmlSigner: new XmlSigner() as ISigner,
+			payrollSigner: new PayrollSigner() as ISigner,
 			certificateData: {} as ICertificateData,
 			environment: options.environment
 		};

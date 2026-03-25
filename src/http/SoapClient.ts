@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosError } from 'axios';
 import { IHttpClient } from '../common/interfaces';
 import { DianEndpoints } from '../config/dianEndpoints';
-import * as fs from "node:fs";
 
 /**
  * Cliente para la comunicación con los servicios web SOAP de la DIAN.
@@ -42,9 +41,6 @@ export class SoapClient implements IHttpClient {
 			const response = await this.client.post(url, xmlSinEspacios, { headers });
 			return response.data;
 		} catch (error) {
-			console.error('Error en la petición SOAP:', error);
-			console.error('--------------------------------------------------');
-			// Si el error es de tipo AxiosError, maneja el error HTTP
 			this.handleHttpError(error as AxiosError);
 		}
 	}

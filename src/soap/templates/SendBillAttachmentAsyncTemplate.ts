@@ -1,15 +1,15 @@
 import { BaseTemplate } from './BaseTemplate';
-import {ISendBillAttachmentAsyncParams} from "../../common/interfaces";
+import { ISendBillAttachmentAsyncTemplateParams } from '../../common/interfaces';
 
 /**
  * Plantilla para la acción SendBillAttachmentAsync del web service de la DIAN.
  */
 export class SendBillAttachmentAsyncTemplate extends BaseTemplate {
-	getXml(params: ISendBillAttachmentAsyncParams): string {
-		if (!params.fileName || !params.contentFile) {
-			throw new Error('Los parámetros fileName y contentFile son requeridos.');
-		}
-		return `
+  getXml(params: ISendBillAttachmentAsyncTemplateParams): string {
+    if (!params.fileName || !params.contentFile) {
+      throw new Error('Los parámetros fileName y contentFile son requeridos.');
+    }
+    return `
       <soap:Envelope xmlns:soap="http://www.w3.org/2003/05/soap-envelope" xmlns:wcf="http://wcf.dian.colombia">
         <soap:Header/>
         <soap:Body>
@@ -20,5 +20,5 @@ export class SendBillAttachmentAsyncTemplate extends BaseTemplate {
         </soap:Body>
       </soap:Envelope>
     `;
-	}
+  }
 }

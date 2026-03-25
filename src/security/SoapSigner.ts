@@ -1,10 +1,7 @@
 import { DOMParser, XMLSerializer } from 'xmldom';
 import * as crypto from 'crypto';
 import { ExclusiveCanonicalization } from 'xml-crypto';
-import * as fs from 'fs'; // Usamos fs directamente
-
-// Asumiendo que estas interfaces y constantes están definidas correctamente en otra parte
-import {ICertificateData, ISigner} from "../common/interfaces";
+import { ICertificateData, ISigner } from '../common/interfaces';
 import { ADDRESSING, BASE64BINARY, DIAN_COLOMBIA, EXC_C14N, RSA_SHA256, SHA256, SOAP_ENVELOPE, WSS_WSSECURITY, WSS_WSSECURITY_UTILITY, X509V3, XMLDSIG } from '../common/constants';
 import { removeDomChild } from "../common/utils";
 
@@ -66,7 +63,7 @@ export class SoapSigner implements ISigner {
 		}
 
 		this.domDocument = parser.parseFromString(unsignedSoap, 'text/xml');
-		this.domDocument = removeDomChild(this.domDocument, 'Header');
+		this.domDocument = removeDomChild(this.domDocument, 'soap:Header');
 
 		// --- Construcción del Header ---
 		const header = this.domDocument.createElement('soap:Header');
@@ -189,7 +186,6 @@ export class SoapSigner implements ISigner {
 			`<wsa:To xmlns:soap="${this.SOAP_ENVELOPE}" xmlns:wcf="${this.DIAN_COLOMBIA}" xmlns:wsa="${this.ADDRESSING}" xmlns:wsu="${this.WSS_WSSECURITY_UTILITY}" wsu:Id="${toId}">` +
 			`${toValue}` +
 			`</wsa:To>`;
-		fs.writeFileSync('__NODEJS_C14N_OUTPUT_TO.xml', toNodeString, 'utf8');
 
 		// 3. Parseamos este string perfecto en un documento temporal.
 		const tempDoc = parser.parseFromString(toNodeString, 'text/xml');
@@ -200,9 +196,6 @@ export class SoapSigner implements ISigner {
 		};
 		const c14n = new ExclusiveCanonicalization();
 		const canonicalizedXml = c14n.process(tempDoc.documentElement, options);
-
-		// Guarda el resultado para verificar que AHORA SÍ CONTIENE TODOS LOS NAMESPACES
-		fs.writeFileSync('__NODEJS_C14N_OUTPUT.xml', canonicalizedXml, 'utf8');
 
 		const hash = crypto.createHash('sha256').update(canonicalizedXml, 'utf-8').digest();
 		const digestValue = hash.toString('base64');
@@ -243,9 +236,6 @@ export class SoapSigner implements ISigner {
 		const c14n = new ExclusiveCanonicalization();
 		const canonicalizedXml = c14n.process(tempDoc.documentElement, {});
 
-		// Guardamos el archivo canónico para compararlo con el `file-tmp-canoniza.xml` de PHP.
-		fs.writeFileSync('file-tmp-canoniza-nodejs.xml', canonicalizedXml, 'utf8');
-
 		// 6. Creamos la firma.
 		const signer = crypto.createSign('RSA-SHA256');
 		signer.update(canonicalizedXml);
@@ -258,8 +248,7 @@ export class SoapSigner implements ISigner {
 
 			return signature;
 		} catch (error) {
-			console.error("Error al firmar el documento:", error);
-			throw new Error("La firma digital no pudo ser generada.");
+			throw new Error('La firma digital SOAP no pudo ser generada.');
 		}
 
 	}

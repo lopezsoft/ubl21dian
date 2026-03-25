@@ -1,7 +1,35 @@
 import { DOMParser, XMLSerializer } from 'xmldom';
 import { SignedXml } from 'xml-crypto';
 import * as forge from 'node-forge';
-import {ICertificateData, ISigner} from '../common/interfaces';
+import { ICertificateData, ISigner } from '../common/interfaces';
+
+/**
+ * Configuración de algoritmo de firma soportados por la DIAN.
+ * Replica las constantes ALGO_SHA1, ALGO_SHA256 y ALGO_SHA512 del PHP.
+ */
+export interface ISignatureAlgorithm {
+	rsa: string;
+	digest: string;
+	hash: string;
+}
+
+export const ALGO_SHA1: ISignatureAlgorithm = {
+	rsa: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha1',
+	digest: 'http://www.w3.org/2001/04/xmlenc#sha1',
+	hash: 'sha1',
+};
+
+export const ALGO_SHA256: ISignatureAlgorithm = {
+	rsa: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+	digest: 'http://www.w3.org/2001/04/xmlenc#sha256',
+	hash: 'sha256',
+};
+
+export const ALGO_SHA512: ISignatureAlgorithm = {
+	rsa: 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha512',
+	digest: 'http://www.w3.org/2001/04/xmlenc#sha512',
+	hash: 'sha512',
+};
 
 /**
  * Clase base abstracta para la firma de documentos XML (UBL).
@@ -9,6 +37,16 @@ import {ICertificateData, ISigner} from '../common/interfaces';
  * permitiendo que las subclases redefinan pasos específicos sin cambiar la estructura.
  */
 export abstract class BaseXmlSigner implements ISigner {
+	protected algorithm: ISignatureAlgorithm = ALGO_SHA256;
+
+	/**
+	 * Permite configurar el algoritmo de firma (SHA1, SHA256, SHA512).
+	 * Por defecto se usa SHA256 (el más común para DIAN).
+	 */
+	public setAlgorithm(algorithm: ISignatureAlgorithm): void {
+		this.algorithm = algorithm;
+	}
+
 	/**
 	 * El "Template Method" principal. Orquesta el proceso de firma.
 	 */
@@ -21,7 +59,7 @@ export abstract class BaseXmlSigner implements ISigner {
 		signature.computeSignature(preProcessedXml, {
 			prefix: 'ds',
 			location: {
-				reference: "//*[local-name()='ExtensionContent'][1]",
+				reference: `(//*[local-name()='ExtensionContent'])[${this.getExtensionContentIndex() + 1}]`,
 				action: 'append',
 			},
 		});
@@ -55,16 +93,29 @@ export abstract class BaseXmlSigner implements ISigner {
 		return xml; // Por defecto, no hace nada
 	}
 
+	/**
+	 * Hook que define el índice de ExtensionContent donde insertar la firma.
+	 * - UBL estándar (Invoice, CreditNote, DebitNote): índice 1
+	 * - AttachedDocument: índice 0
+	 * - DocumentSupport con Minsalud: índice 2
+	 *
+	 * Las subclases pueden sobreescribirlo según las reglas del tipo de documento.
+	 */
+	protected getExtensionContentIndex(): number {
+		return 1;
+	}
+
 	// Métodos privados y comunes del algoritmo de firma
 	private configureSignature(signature: SignedXml, certificateData: ICertificateData): void {
-		signature.signatureAlgorithm = 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256';
-		signature.canonicalizationAlgorithm = 'http://www.w3.org/2001/10/xml-exc-c14n#';
-		(signature as any).signingKey = certificateData.privateKeyPem;
+		signature.signatureAlgorithm = this.algorithm.rsa;
+		// PHP usa C14N estándar para XAdES (no Exc-C14N que se reserva para SOAP)
+		signature.canonicalizationAlgorithm = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315';
+		signature.privateKey = certificateData.privateKeyPem;
 
 		signature.addReference({
 			xpath: "/*",
-			digestAlgorithm: 'http://www.w3.org/2001/04/xmlenc#sha256',
-			transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature', 'http://www.w3.org/2001/10/xml-exc-c14n#'],
+			digestAlgorithm: this.algorithm.digest,
+			transforms: ['http://www.w3.org/2000/09/xmldsig#enveloped-signature', 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315'],
 		});
 	}
 
@@ -76,8 +127,11 @@ export abstract class BaseXmlSigner implements ISigner {
 
 	private addXAdESObject(signatureNode: Node, certData: ICertificateData): void {
 		const cert = forge.pki.certificateFromPem(certData.publicKeyPem);
+		const md = this.algorithm.hash === 'sha512' ? forge.md.sha512.create()
+			: this.algorithm.hash === 'sha1' ? forge.md.sha1.create()
+				: forge.md.sha256.create();
 		const certDigest = forge.util.encode64(forge.pki.getPublicKeyFingerprint(cert.publicKey, {
-			md: forge.md.sha256.create(),
+			md,
 			encoding: 'binary'
 		}));
 
@@ -105,7 +159,7 @@ export abstract class BaseXmlSigner implements ISigner {
               <xades:SigningCertificate>
                 <xades:Cert>
                   <xades:CertDigest>
-                    <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <ds:DigestMethod Algorithm="${this.algorithm.digest}"/>
                     <ds:DigestValue>${certDigest}</ds:DigestValue>
                   </xades:CertDigest>
                   <xades:IssuerSerial>
@@ -120,7 +174,7 @@ export abstract class BaseXmlSigner implements ISigner {
                     <xades:Identifier>${policyIdentifier}</xades:Identifier>
                   </xades:SigPolicyId>
                   <xades:SigPolicyHash>
-                    <ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/>
+                    <ds:DigestMethod Algorithm="${this.algorithm.digest}"/>
                     <ds:DigestValue>${policyHash}</ds:DigestValue>
                   </xades:SigPolicyHash>
                 </xades:SignaturePolicyId>

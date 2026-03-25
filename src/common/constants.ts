@@ -19,3 +19,24 @@ export const GET_REFERENCE_NOTES_ACTION = 'http://wcf.dian.colombia/IWcfDianCust
 export const GET_STATUS_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatus';
 export const GET_STATUS_ZIP_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatusZip';
 export const GET_XML_BY_DOCUMENT_KEY_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetXmlByDocumentKey';
+
+export const SEND_BILL_SYNC_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSync';
+export const SEND_BILL_ASYNC_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillAsync';
+export const SEND_BILL_ATTACHMENT_ASYNC_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillAttachmentAsync';
+export const SEND_EVENT_UPDATE_STATUS_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendEventUpdateStatus';
+export const SEND_NOMINA_SYNC_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendNominaSync';
+export const SEND_TEST_SET_ASYNC_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendTestSetAsync';
+export const GET_STATUS_EVENT_ACTION = 'http://wcf.dian.colombia/IWcfDianCustomerServices/GetStatusEvent';
+
+// XAdES — Constantes de firma (réplica de SignInvoice.php)
+export const C14N = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315';
+export const ENVELOPED_SIGNATURE = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
+export const SIGNED_PROPERTIES_TYPE = 'http://uri.etsi.org/01903#SignedProperties';
+export const POLITICA_FIRMA_V2 = 'https://facturaelectronica.dian.gov.co/politicadefirma/v2/politicadefirmav2.pdf';
+export const POLITICA_FIRMA_V2_VALUE = 'dMoMvtcG5aIzgYo0tIsSQeVJBDnUnfSOfBpxXrmor0Y=';
+export const XADES_NS = 'http://uri.etsi.org/01903/v1.3.2#';
+export const XADES141_NS = 'http://uri.etsi.org/01903/v1.4.1#';
+
+// DIAN — Dominios QR por ambiente
+export const QR_DOMAIN_HABILITACION = 'catalogo-vpfe-hab.dian.gov.co';
+export const QR_DOMAIN_PRODUCCION = 'catalogo-vpfe.dian.gov.co';

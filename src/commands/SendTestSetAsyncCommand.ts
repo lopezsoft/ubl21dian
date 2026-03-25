@@ -1,29 +1,30 @@
-import {ICommand, ICommandServices, ISendNominaSyncParams} from '../common/interfaces';
-import { SendNominaSyncTemplate } from '../soap/templates/SendNominaSyncTemplate';
+import { ICommand, ICommandServices, ISendTestSetAsyncParams } from '../common/interfaces';
+import { SendTestSetAsyncTemplate } from '../soap/templates/SendTestSetAsyncTemplate';
 import { fastXmlParser } from '../common/utils';
-import {DianEndpoints} from "../config/dianEndpoints";
-
-
+import { DianEndpoints } from '../config/dianEndpoints';
+import { SEND_TEST_SET_ASYNC_ACTION } from '../common/constants';
 
 /**
- * Comando para ejecutar la operación SendNominaSync de la DIAN.
+ * Comando para ejecutar la operación SendTestSetAsync de la DIAN.
+ * Envía un conjunto de pruebas (TestSet) al ambiente de habilitación.
  */
-export class SendTestSetAsyncCommand implements ICommand<ISendNominaSyncParams, any> {
-	public async execute(services: ICommandServices, params: ISendNominaSyncParams): Promise<any> {
-		const action  = 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendBillSync';
-		const url     = DianEndpoints[services.environment];
-		const signedPayrollXml = services.payrollSigner.sign(params.unsignedPayrollXml, services.certificateData, action, url);
-		const contentFileBase64 = Buffer.from(signedPayrollXml).toString('base64');
+export class SendTestSetAsyncCommand implements ICommand<ISendTestSetAsyncParams, any> {
+	public async execute(services: ICommandServices, params: ISendTestSetAsyncParams): Promise<any> {
+		const action = SEND_TEST_SET_ASYNC_ACTION;
+		const url = DianEndpoints[services.environment];
 
-		const template = new SendNominaSyncTemplate();
-		const unsignedSoap = template.getXml({ contentFile: contentFileBase64 });
-		const signedSoap = (services.soapSigner as any).sign(unsignedSoap, services.certificateData);
-
-		const responseXml = await services.soapClient.post(signedSoap, {
-			SOAPAction: 'http://wcf.dian.colombia/IWcfDianCustomerServices/SendNominaSync',
+		const template = new SendTestSetAsyncTemplate();
+		const unsignedSoap = template.getXml({
+			fileName: params.fileName,
+			contentFile: params.contentFile,
+			testSetId: params.testSetId,
 		});
 
+		const signedSoap = services.soapSigner.sign(unsignedSoap, services.certificateData, action, url);
+
+		const responseXml = await services.soapClient.post(signedSoap, { action });
+
 		const parsedResponse = fastXmlParser.parse(responseXml);
-		return parsedResponse?.['s:Envelope']?.['s:Body']?.['SendNominaSyncResponse']?.['SendNominaSyncResult'];
+		return parsedResponse?.['Envelope']?.['Body']?.['SendTestSetAsyncResponse']?.['SendTestSetAsyncResult'];
 	}
 }

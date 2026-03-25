@@ -43,21 +43,19 @@ A continuación, un ejemplo completo de cómo firmar y enviar una factura electr
 
 ```typescript
 import * as fs from 'fs/promises';
-import { DianClient } from 'dian-sdk-node';
-// Se importa el comando específico que se desea ejecutar
-import { SendBillSyncCommand, ISendBillSyncCommandParams } from 'dian-sdk-node/commands';
+import { DianClient, SendBillSyncCommand, ISendBillSyncParams } from 'dian-sdk-node';
 
 async function enviarFactura() {
   try {
-    // 1. Configurar el cliente
-    const client = new DianClient({
-      certificatePath: './certificados/certificado_pruebas.p12',
-      passwordPsswrd: 'tu_contraseña_del_certificado',
-      environment: 'HABILITACION', // O 'PRODUCCION'
-    });
+    // 1. Configurar el cliente (environment: 1 = PRODUCCION, 2 = HABILITACION)
+    const client = new DianClient({ environment: 2 });
 
-    // 2. Inicializar el cliente (esto carga el certificado y lo deja listo para usar)
-    await client.initialize();
+    // 2. Inicializar con el certificado digital (.p12)
+    const certificate = await fs.readFile('./certificados/certificado_pruebas.p12');
+    await client.initialize({
+      certificate,
+      passwordPsswrd: 'tu_contraseña_del_certificado',
+    });
     console.log('Cliente DIAN inicializado correctamente.');
 
     // 3. Cargar el XML de la factura sin firmar
@@ -65,7 +63,7 @@ async function enviarFactura() {
 
     // 4. Preparar y ejecutar el comando
     const command = new SendBillSyncCommand();
-    const params: ISendBillSyncCommandParams = {
+    const params: ISendBillSyncParams = {
       fileName: 'FV-DEMO-001.xml',
       unsignedUblXml: unsignedInvoiceXml,
     };
@@ -81,7 +79,6 @@ async function enviarFactura() {
       console.log('CUFE:', dianResponse.XmlDocumentKey);
     } else {
       console.error('Error al validar la factura:', dianResponse.StatusMessage);
-      // dianResponse.ErrorMessage contiene más detalles del error
     }
 
   } catch (error) {
@@ -95,28 +92,55 @@ enviarFactura();
 ### Ejemplo 2: Consultar el Estado de un Documento
 
 ```typescript
-import { DianClient } from 'dian-sdk-node';
-import { GetStatusCommand, IGetStatusCommandParams } from 'dian-sdk-node/commands';
+import * as fs from 'fs/promises';
+import { DianClient, GetStatusCommand } from 'dian-sdk-node';
 
 async function consultarEstado() {
-  const client = new DianClient({
-    certificatePath: './certificados/certificado_pruebas.p12',
+  const client = new DianClient({ environment: 2 });
+
+  const certificate = await fs.readFile('./certificados/certificado_pruebas.p12');
+  await client.initialize({
+    certificate,
     passwordPsswrd: 'tu_contraseña_del_certificado',
   });
-  await client.initialize();
 
   const command = new GetStatusCommand();
-  const params: IGetStatusCommandParams = {
+  const dianResponse = await client.execute(command, {
     trackId: 'el-track-id-devuelto-por-la-dian',
-  };
-
-  console.log('Consultando estado del documento...');
-  const dianResponse = await client.execute(command, params);
+  });
   
   console.log('Estado del documento:', dianResponse);
 }
 
 consultarEstado();
+```
+
+### Ejemplo 3: Enviar Nómina Electrónica
+
+```typescript
+import * as fs from 'fs/promises';
+import { DianClient, SendNominaSyncCommand } from 'dian-sdk-node';
+
+async function enviarNomina() {
+  const client = new DianClient({ environment: 2 });
+
+  const certificate = await fs.readFile('./certificados/certificado_pruebas.p12');
+  await client.initialize({
+    certificate,
+    passwordPsswrd: 'tu_contraseña_del_certificado',
+  });
+
+  const unsignedPayrollXml = await fs.readFile('./ejemplos/nomina-sin-firmar.xml', 'utf-8');
+
+  const command = new SendNominaSyncCommand();
+  const result = await client.execute(command, {
+    unsignedPayrollXml,
+  });
+
+  console.log('Resultado nómina:', result);
+}
+
+enviarNomina();
 ```
 
 ## 📚 API (Resumen)
@@ -126,10 +150,10 @@ consultarEstado();
 Es la clase principal y el único punto de entrada a la librería.
 
 - **`new DianClient(options)`**: Crea una nueva instancia del cliente.
-    - `options.certificatePath`: Ruta al archivo `.p12`.
+    - `options.environment`: `1` para PRODUCCIÓN o `2` para HABILITACIÓN.
+- **`initialize(options)`**: Método asíncrono que carga y valida el certificado. **Debe ser llamado antes de ejecutar cualquier comando.**
+    - `options.certificate`: `Buffer` con el contenido del archivo `.p12`.
     - `options.passwordPsswrd`: Contraseña del certificado.
-    - `options.environment` (Opcional): `'HABILITACION'` (por defecto) o `'PRODUCCION'`.
-- **`initialize()`**: Método asíncrono que carga y valida el certificado. **Debe ser llamado antes de ejecutar cualquier comando.**
 - **`execute(command, params)`**: Método asíncrono que ejecuta una operación.
     - `command`: Una instancia de la clase de comando que representa la operación (ej. `new SendBillSyncCommand()`).
     - `params`: Un objeto con los parámetros que requiere ese comando específico.
