@@ -1,0 +1,52 @@
+{
+    "name": "lopezsoft/ubl21dian",
+    "type": "library",
+    "description": "Core for electronic invoicing pre-validation - DIAN UBL 2.1",
+    "homepage": "https://matias-api.com",
+    "version": "3.6.8",
+    "keywords": [
+        "soap dian",
+        "web service",
+        "dian",
+        "xml",
+        "ubl",
+        "core"
+    ],
+    "support": {
+        "issues": "https://github.com/lopezsoft/ubl21dian/issues",
+        "source": "https://github.com/lopezsoft/ubl21dian"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Lewis Lopez",
+            "email": "soporte@matias.com.co",
+            "homepage": "https://matias-api.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": ">= 8.0",
+        "ext-dom": "*",
+        "ext-xml": "*",
+        "ext-curl": "*",
+        "ext-libxml": "*",
+        "ext-openssl": "*",
+        "ext-xmlwriter": "*",
+        "nesbot/carbon": "^2.19 || ^3.8",
+        "ext-json": "*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^8.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "Lopezsoft\\UBL21dian\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Lopezsoft\\Tests\\": "tests/"
+        }
+    }
+}

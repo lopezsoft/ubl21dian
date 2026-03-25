@@ -1,0 +1,709 @@
+<?php
+
+namespace Lopezsoft\UBL21dian\XAdES;
+
+use DOMXPath;
+use DOMDocument;
+use Carbon\Carbon;
+use Exception;
+use Lopezsoft\UBL21dian\Sign;
+
+/**
+ * Sign Invoice.
+ * @property \DOMElement $extensionContentSing
+ * @property \DOMElement $signature
+ * @property \DOMElement $signedInfo
+ */
+class SignInvoice extends Sign
+{
+    /**
+     * XMLDSIG.
+     *
+     * @var string
+     */
+    const XMLDSIG = 'http://www.w3.org/2000/09/xmldsig#';
+
+    /**
+     * POLITICA_FIRMA_V2.
+     *
+     * @var string
+     */
+    const POLITICA_FIRMA_V2 = 'https://facturaelectronica.dian.gov.co/politicadefirma/v2/politicadefirmav2.pdf';
+
+    /**
+     * POLITICA_FIRMA_V2_VALUE.
+     *
+     * @var string
+     */
+    const POLITICA_FIRMA_V2_VALUE = 'dMoMvtcG5aIzgYo0tIsSQeVJBDnUnfSOfBpxXrmor0Y=';
+
+    /**
+     * C14N.
+     *
+     * @var string
+     */
+    const C14N = 'http://www.w3.org/TR/2001/REC-xml-c14n-20010315';
+
+    /**
+     * ENVELOPED_SIGNATURE.
+     *
+     * @var string
+     */
+    const ENVELOPED_SIGNATURE = 'http://www.w3.org/2000/09/xmldsig#enveloped-signature';
+
+    /**
+     * SIGNED_PROPERTIES.
+     *
+     * @var string
+     */
+    const SIGNED_PROPERTIES = 'http://uri.etsi.org/01903#SignedProperties';
+
+    /**
+     * ALGO_SHA1.
+     *
+     * @var array
+     */
+    const ALGO_SHA1 = [
+        'rsa' => 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha1',
+        'algorithm' => 'http://www.w3.org/2001/04/xmlenc#sha1',
+        'sign' => OPENSSL_ALGO_SHA1,
+        'hash' => 'sha1',
+    ];
+
+    /**
+     * ALGO_SHA256.
+     *
+     * @var array
+     */
+    const ALGO_SHA256 = [
+        'rsa' => 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha256',
+        'algorithm' => 'http://www.w3.org/2001/04/xmlenc#sha256',
+        'sign' => OPENSSL_ALGO_SHA256,
+        'hash' => 'sha256',
+    ];
+
+    /**
+     * ALGO_SHA512.
+     *
+     * @var array
+     */
+    const ALGO_SHA512 = [
+        'rsa' => 'http://www.w3.org/2001/04/xmldsig-more#rsa-sha512',
+        'algorithm' => 'http://www.w3.org/2001/04/xmlenc#sha512',
+        'sign' => OPENSSL_ALGO_SHA512,
+        'hash' => 'sha512',
+    ];
+
+    /**
+     * IDS.
+     *
+     * @var array
+     */
+    protected $ids = [
+        'SignedPropertiesID'    => 'SIGNED-PROPS',
+        'SignatureValueID'      => 'SIG-VALUE',
+        'SignatureID'           => 'MATIAS-API',
+        'KeyInfoID'             => 'KEY-INFO',
+        'ReferenceID'           => 'REF',
+    ];
+
+    /**
+     * NS.
+     *
+     * @var array
+     */
+    public $ns = [
+        'xmlns:cac' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonAggregateComponents-2',
+        'xmlns:ext' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonExtensionComponents-2',
+        'xmlns:cbc' => 'urn:oasis:names:specification:ubl:schema:xsd:CommonBasicComponents-2',
+        'xmlns:sts' => 'http://www.dian.gov.co/contratos/facturaelectronica/v1/Structures',
+        'xmlns' => 'urn:oasis:names:specification:ubl:schema:xsd:Invoice-2',
+        'xmlns:xsi' => 'http://www.w3.org/2001/XMLSchema-instance',
+        'xmlns:xades141' => 'http://uri.etsi.org/01903/v1.4.1#',
+        'xmlns:xades' => 'http://uri.etsi.org/01903/v1.3.2#',
+        'xmlns:ds' => self::XMLDSIG,
+    ];
+
+    /**
+     * Result signature.
+     *
+     * @var mixed
+     */
+    public $resultSignature;
+
+    /**
+     * Group of totals.
+     *
+     * @var string
+     */
+    public $groupOfTotals = 'LegalMonetaryTotal';
+    public string|null $softwareID = null;
+    public string|null $pin = null;
+    public string|null $technicalKey = null;
+    public bool $contingency = false;
+
+    public function __construct($pathCertificate = null, $passwords = null, $xmlString = null, $algorithm = self::ALGO_SHA256)
+    {
+        $this->algorithm = $algorithm;
+
+        parent::__construct($pathCertificate, $passwords, $xmlString);
+
+        return $this;
+    }
+
+    /**
+     * Load XML.
+     * @throws Exception
+     */
+    protected function loadXML(): void
+    {
+        if ($this->xmlString instanceof DOMDocument) {
+            $this->xmlString = $this->xmlString->saveXML();
+        }
+
+        $this->domDocument = new DOMDocument($this->version, $this->encoding);
+        $this->domDocument->loadXML($this->xmlString);
+
+        // DOMX path
+        $this->domXPath = new DOMXPath($this->domDocument);
+
+        // Software security code
+        $this->softwareSecurityCode();
+        if(strpos($this->xmlString, '</ApplicationResponse>') && strpos($this->xmlString, '</AttachedDocument>') === false)
+            $this->setCUDEEVENT();
+        else
+            $this->setUUID();
+
+        // Digest value xml clean
+        $this->digestValueXML();
+
+        $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(1);
+        // Consulta XPath para verificar la existencia de CustomTagGeneral dentro de ExtensionContent, Sector salud
+        $customTagGeneralNodes =  $this->domDocument->documentElement->getElementsByTagName('CustomTagGeneral');
+        if ($customTagGeneralNodes->length > 0) {
+            $this->extensionContentSing = $this->domDocument->documentElement->getElementsByTagName('ExtensionContent')->item(2);
+        }
+        $this->signature = $this->domDocument->createElement('ds:Signature');
+        $this->signature->setAttribute('xmlns:ds', self::XMLDSIG);
+        $this->signature->setAttribute('Id', $this->SignatureID);
+        $this->extensionContentSing->appendChild($this->signature);
+
+        // Signed info
+        $this->signedInfo = $this->domDocument->createElement('ds:SignedInfo');
+        $this->signature->appendChild($this->signedInfo);
+
+        // Signature value not value
+        $this->signatureValue = $this->domDocument->createElement('ds:SignatureValue', 'ERROR!');
+        $this->signatureValue->setAttribute('Id', $this->SignatureValueID);
+        $this->signature->appendChild($this->signatureValue);
+
+        // Key info
+        $this->keyInfo = $this->domDocument->createElement('ds:KeyInfo');
+        $this->keyInfo->setAttribute('Id', $this->KeyInfoID);
+        $this->signature->appendChild($this->keyInfo);
+
+        $this->X509Data = $this->domDocument->createElement('ds:X509Data');
+        $this->keyInfo->appendChild($this->X509Data);
+
+        $this->X509Certificate = $this->domDocument->createElement('ds:X509Certificate', $this->x509Export());
+        $this->X509Data->appendChild($this->X509Certificate);
+
+        // Object
+        $this->object = $this->domDocument->createElement('ds:Object');
+        $this->signature->appendChild($this->object);
+
+        $this->qualifyingProperties = $this->domDocument->createElement('xades:QualifyingProperties');
+        $this->qualifyingProperties->setAttribute('Target', "#{$this->SignatureID}");
+        $this->object->appendChild($this->qualifyingProperties);
+
+        $this->signedProperties = $this->domDocument->createElement('xades:SignedProperties');
+        $this->signedProperties->setAttribute('Id', $this->SignedPropertiesID);
+        $this->qualifyingProperties->appendChild($this->signedProperties);
+
+        $this->signedSignatureProperties = $this->domDocument->createElement('xades:SignedSignatureProperties');
+        $this->signedProperties->appendChild($this->signedSignatureProperties);
+
+        $this->signingTime = $this->domDocument->createElement('xades:SigningTime', Carbon::now('America/Bogota')->format('Y-m-d\TH:i:s.vP'));
+        $this->signedSignatureProperties->appendChild($this->signingTime);
+
+        $this->signingCertificate = $this->domDocument->createElement('xades:SigningCertificate');
+        $this->signedSignatureProperties->appendChild($this->signingCertificate);
+
+        // Cert
+        $this->cert = $this->domDocument->createElement('xades:Cert');
+        $this->signingCertificate->appendChild($this->cert);
+
+        $this->certDigest = $this->domDocument->createElement('xades:CertDigest');
+        $this->cert->appendChild($this->certDigest);
+
+        $this->digestMethodCert = $this->domDocument->createElement('ds:DigestMethod');
+        $this->digestMethodCert->setAttribute('Algorithm', $this->algorithm['algorithm']);
+        $this->certDigest->appendChild($this->digestMethodCert);
+
+        $this->DigestValueCert = base64_encode(openssl_x509_fingerprint($this->certs['cert'], $this->algorithm['hash'], true));
+
+        $this->digestValueCert = $this->domDocument->createElement('ds:DigestValue', $this->DigestValueCert);
+        $this->certDigest->appendChild($this->digestValueCert);
+
+        $this->issuerSerialCert = $this->domDocument->createElement('xades:IssuerSerial');
+        $this->cert->appendChild($this->issuerSerialCert);
+
+        $this->X509IssuerNameCert = $this->domDocument->createElement('ds:X509IssuerName', $this->joinArray(array_reverse(openssl_x509_parse($this->certs['cert'])['issuer']), false, ','));
+        $this->issuerSerialCert->appendChild($this->X509IssuerNameCert);
+
+        $this->X509SerialNumberCert = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($this->certs['cert'])['serialNumber']);
+        $this->issuerSerialCert->appendChild($this->X509SerialNumberCert);
+
+        $this->signaturePolicyIdentifier = $this->domDocument->createElement('xades:SignaturePolicyIdentifier');
+        $this->signedSignatureProperties->appendChild($this->signaturePolicyIdentifier);
+
+        $this->signaturePolicyId = $this->domDocument->createElement('xades:SignaturePolicyId');
+        $this->signaturePolicyIdentifier->appendChild($this->signaturePolicyId);
+
+        $this->sigPolicyId = $this->domDocument->createElement('xades:SigPolicyId');
+        $this->signaturePolicyId->appendChild($this->sigPolicyId);
+
+        $this->identifier = $this->domDocument->createElement('xades:Identifier', self::POLITICA_FIRMA_V2);
+        $this->sigPolicyId->appendChild($this->identifier);
+
+        $this->sigPolicyHash = $this->domDocument->createElement('xades:SigPolicyHash');
+        $this->signaturePolicyId->appendChild($this->sigPolicyHash);
+
+        $this->digestMethodPolicy = $this->domDocument->createElement('ds:DigestMethod');
+        $this->digestMethodPolicy->setAttribute('Algorithm', $this->algorithm['algorithm']);
+        $this->sigPolicyHash->appendChild($this->digestMethodPolicy);
+
+        $this->digestValuePolicy = $this->domDocument->createElement('ds:DigestValue', self::POLITICA_FIRMA_V2_VALUE);
+        $this->sigPolicyHash->appendChild($this->digestValuePolicy);
+
+        $this->signerRole = $this->domDocument->createElement('xades:SignerRole');
+        $this->signedSignatureProperties->appendChild($this->signerRole);
+
+        $this->claimedRoles = $this->domDocument->createElement('xades:ClaimedRoles');
+        $this->signerRole->appendChild($this->claimedRoles);
+
+        $this->claimedRole = $this->domDocument->createElement('xades:ClaimedRole', 'supplier');
+        $this->claimedRoles->appendChild($this->claimedRole);
+
+        // Signed info nodes
+        $this->canonicalizationMethod = $this->domDocument->createElement('ds:CanonicalizationMethod');
+        $this->canonicalizationMethod->setAttribute('Algorithm', self::C14N);
+        $this->signedInfo->appendChild($this->canonicalizationMethod);
+
+        $this->signatureMethod = $this->domDocument->createElement('ds:SignatureMethod');
+        $this->signatureMethod->setAttribute('Algorithm', $this->algorithm['rsa']);
+        $this->signedInfo->appendChild($this->signatureMethod);
+
+        $this->referenceXML = $this->domDocument->createElement('ds:Reference');
+        $this->referenceXML->setAttribute('Id', $this->ReferenceID);
+        $this->referenceXML->setAttribute('URI', '');
+        $this->signedInfo->appendChild($this->referenceXML);
+
+        $this->transformsXML = $this->domDocument->createElement('ds:Transforms');
+        $this->referenceXML->appendChild($this->transformsXML);
+
+        $this->transformXML = $this->domDocument->createElement('ds:Transform');
+        $this->transformXML->setAttribute('Algorithm', self::ENVELOPED_SIGNATURE);
+        $this->transformsXML->appendChild($this->transformXML);
+
+        $this->digestMethodXML = $this->domDocument->createElement('ds:DigestMethod');
+        $this->digestMethodXML->setAttribute('Algorithm', $this->algorithm['algorithm']);
+        $this->referenceXML->appendChild($this->digestMethodXML);
+
+        $this->digestValueXML = $this->domDocument->createElement('ds:DigestValue', $this->DigestValueXML);
+        $this->referenceXML->appendChild($this->digestValueXML);
+
+        $this->domDocumentReferenceKeyInfoC14N = new DOMDocument($this->version, $this->encoding);
+        $this->domDocumentReferenceKeyInfoC14N->loadXML(str_replace('<ds:KeyInfo ', "<ds:KeyInfo {$this->joinArray($this->ns)} ", $this->domDocument->saveXML($this->keyInfo)));
+
+        $this->DigestValueKeyInfo = base64_encode(hash($this->algorithm['hash'], $this->domDocumentReferenceKeyInfoC14N->C14N(), true));
+
+        $this->referenceKeyInfo = $this->domDocument->createElement('ds:Reference');
+        $this->referenceKeyInfo->setAttribute('URI', "#{$this->KeyInfoID}");
+        $this->signedInfo->appendChild($this->referenceKeyInfo);
+
+        $this->digestMethodKeyInfo = $this->domDocument->createElement('ds:DigestMethod');
+        $this->digestMethodKeyInfo->setAttribute('Algorithm', $this->algorithm['algorithm']);
+        $this->referenceKeyInfo->appendChild($this->digestMethodKeyInfo);
+
+        $this->digestValueKeyInfo = $this->domDocument->createElement('ds:DigestValue', $this->DigestValueKeyInfo);
+        $this->referenceKeyInfo->appendChild($this->digestValueKeyInfo);
+
+        $this->referenceSignedProperties = $this->domDocument->createElement('ds:Reference');
+        $this->referenceSignedProperties->setAttribute('Type', self::SIGNED_PROPERTIES);
+        $this->referenceSignedProperties->setAttribute('URI', "#{$this->SignedPropertiesID}");
+        $this->signedInfo->appendChild($this->referenceSignedProperties);
+
+        $this->digestMethodSignedProperties = $this->domDocument->createElement('ds:DigestMethod');
+        $this->digestMethodSignedProperties->setAttribute('Algorithm', $this->algorithm['algorithm']);
+        $this->referenceSignedProperties->appendChild($this->digestMethodSignedProperties);
+
+        $this->domDocumentSignedPropertiesC14N = new DOMDocument($this->version, $this->encoding);
+        $this->domDocumentSignedPropertiesC14N->loadXML(str_replace('<xades:SignedProperties ', "<xades:SignedProperties {$this->joinArray($this->ns)} ", $this->domDocument->saveXML($this->signedProperties)));
+
+        $this->DigestValueSignedProperties = base64_encode(hash($this->algorithm['hash'], $this->domDocumentSignedPropertiesC14N->C14N(), true));
+
+        $this->digestValueSignedProperties = $this->domDocument->createElement('ds:DigestValue', $this->DigestValueSignedProperties);
+        $this->referenceSignedProperties->appendChild($this->digestValueSignedProperties);
+
+        // Signature set value
+        $this->domDocumentSignatureValueC14N = new DOMDocument($this->version, $this->encoding);
+        $this->domDocumentSignatureValueC14N->loadXML(str_replace('<ds:SignedInfo', "<ds:SignedInfo {$this->joinArray($this->ns)} ", $this->domDocument->saveXML($this->signedInfo)));
+
+        openssl_sign($this->domDocumentSignatureValueC14N->C14N(), $this->resultSignature, $this->certs['pkey'], $this->algorithm['sign']);
+
+        $this->signatureValue->nodeValue = base64_encode($this->resultSignature);
+    }
+
+    /**
+     * Digest value XML.
+     */
+    private function digestValueXML(): void
+    {
+        $this->DigestValueXML = base64_encode(hash($this->algorithm['hash'], $this->domDocument->C14N(), true));
+    }
+
+    /**
+     * Software security code.
+     * @throws Exception
+     */
+    private function softwareSecurityCode(): void
+    {
+        if (is_null($this->softwareID) || is_null($this->pin)) {
+            return;
+        }
+
+        $this->getTag('SoftwareSecurityCode', 0)->nodeValue = hash('sha384', "{$this->softwareID}{$this->pin}{$this->getTag('ID', 0)->nodeValue}");
+    }
+
+    /**
+     * set UUID.
+     * @throws Exception
+     */
+    private function setUUID(): void
+    {
+        // Register name space
+        foreach ($this->ns as $key => $value) {
+            $this->domXPath->registerNameSpace($key, $value);
+        }
+
+        if ((!is_null($this->pin)) && (is_null($this->technicalKey))) {
+            $this->cude();
+        } elseif (!is_null($this->technicalKey)) {
+            $this->cufe();
+        }
+
+        $qr             = ($this->getTag('ProfileExecutionID', 0)->nodeValue == 2) ? "catalogo-vpfe-hab.dian.gov.co" : "catalogo-vpfe.dian.gov.co";
+        $XmlDocumentKey = $this->getTag('UUID', 0)->nodeValue;
+        $this->getTag('QRCode', 0)->nodeValue = "https://{$qr}/document/searchqr?documentkey={$XmlDocumentKey}";
+    }
+
+    /**
+     * set CUDEEVENT.
+     * @throws Exception
+     */
+    private function setCUDEEVENT(): void
+    {
+        // Register name space
+        foreach ($this->ns as $key => $value) {
+            $this->domXPath->registerNameSpace($key, $value);
+        }
+
+        $this->cudeevent();
+    }
+
+    /**
+     * Trunca un valor decimal a exactamente 2 decimales según especificación DIAN.
+     * NO redondea, solo trunca. Siempre retorna exactamente 2 decimales.
+     * 
+     * @param float $value Valor a truncar
+     * @param int $decimals Cantidad de decimales (default: 2)
+     * @return string Valor truncado como string con exactamente 2 decimales
+     */
+    private function truncateDecimals(float $value, int $decimals = 2): string
+    {
+        // Convertir a string con máxima precisión disponible
+        $stringValue = number_format($value, 6, '.', '');
+        
+        // Eliminar ceros innecesarios del final
+        $stringValue = rtrim($stringValue, '0');
+        
+        // Eliminar punto si quedó al final (número entero)
+        $stringValue = rtrim($stringValue, '.');
+        
+        // Buscar posición del punto decimal
+        $dotPos = strpos($stringValue, '.');
+        
+        // Si no hay punto decimal (es un entero)
+        if ($dotPos === false) {
+            // Agregar punto y los decimales requeridos
+            return $stringValue . '.' . str_repeat('0', $decimals);
+        }
+        
+        // Obtener parte entera y decimal
+        $integerPart = substr($stringValue, 0, $dotPos);
+        $decimalPart = substr($stringValue, $dotPos + 1);
+        
+        // Truncar o rellenar la parte decimal
+        if (strlen($decimalPart) < $decimals) {
+            // Si tiene menos decimales, rellenar con ceros
+            $decimalPart = str_pad($decimalPart, $decimals, '0', STR_PAD_RIGHT);
+        } else {
+            // Si tiene más decimales, truncar (NO redondear)
+            $decimalPart = substr($decimalPart, 0, $decimals);
+        }
+        
+        return $integerPart . '.' . $decimalPart;
+    }
+
+    /**
+     * Obtiene el monto de un impuesto específico truncado a 2 decimales.
+     * Según DIAN: "con decimales a dos (2) dígitos truncados"
+     * 
+     * @param string $taxId ID del impuesto (01, 03, 04, etc.)
+     * @return string Monto del impuesto truncado a 2 decimales
+     * @throws Exception
+     */
+    private function getTaxAmount(string $taxId): string
+    {
+        $taxAmount = $this->getQuery("cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID={$taxId}]/cbc:TaxAmount", false)->nodeValue ?? '0.00';
+        return $this->truncateDecimals((float)$taxAmount, 2);
+    }
+
+    /**
+     * Obtiene el valor de LineExtensionAmount truncado a 2 decimales.
+     * Según DIAN: "con decimales a dos (2) dígitos truncados"
+     * 
+     * @return string Valor truncado a 2 decimales
+     * @throws Exception
+     */
+    private function getLineExtensionAmount(): string
+    {
+        return $this->truncateDecimals((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:LineExtensionAmount")->nodeValue, 2);
+    }
+
+    /**
+     * Obtiene el valor de PayableAmount truncado a 2 decimales.
+     * Según DIAN: "con decimales a dos (2) dígitos truncados"
+     * 
+     * @return string Valor truncado a 2 decimales
+     * @throws Exception
+     */
+    private function getPayableAmount(): string
+    {
+        return $this->truncateDecimals((float)$this->getQuery("cac:{$this->groupOfTotals}/cbc:PayableAmount")->nodeValue, 2);
+    }
+
+    /**
+     * Obtiene los datos básicos del documento (ID, Fecha, Hora).
+     * 
+     * @return array Array con las claves 'id', 'date', 'time'
+     * @throws Exception
+     */
+    private function getBasicDocumentData(): array
+    {
+        return [
+            'id' => $this->getTag('ID', 0)->nodeValue,
+            'date' => $this->getTag('IssueDate', 0)->nodeValue,
+            'time' => $this->getTag('IssueTime', 0)->nodeValue,
+        ];
+    }
+
+    /**
+     * Obtiene los NITs del proveedor y cliente.
+     * 
+     * @return array Array con las claves 'supplier' y 'customer'
+     * @throws Exception
+     */
+    private function getPartyIdentifications(): array
+    {
+        return [
+            'supplier' => $this->getQuery('cac:AccountingSupplierParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue,
+            'customer' => $this->getQuery('cac:AccountingCustomerParty/cac:Party/cac:PartyTaxScheme/cbc:CompanyID')->nodeValue,
+        ];
+    }
+
+    /**
+     * Construye la cadena base para CUFE/CUDE con los impuestos estándar.
+     * 
+     * @return string Cadena construida con los valores del documento
+     * @throws Exception
+     */
+    private function buildInvoiceHashString(): string
+    {
+        $basic = $this->getBasicDocumentData();
+        $parties = $this->getPartyIdentifications();
+        $lineExtension = $this->getLineExtensionAmount();
+        $payableAmount = $this->getPayableAmount();
+        $tax01 = $this->getTaxAmount('01');
+        $tax04 = $this->getTaxAmount('04');
+        $tax03 = $this->getTaxAmount('03');
+        
+        return "{$basic['id']}{$basic['date']}{$basic['time']}{$lineExtension}01{$tax01}04{$tax04}03{$tax03}{$payableAmount}{$parties['supplier']}{$parties['customer']}";
+    }
+
+    /**
+     * CUFE.
+     * @throws Exception
+     */
+    private function cufe(): void
+    {
+        $baseString = $this->buildInvoiceHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $val = "{$baseString}{$this->technicalKey}{$profileId}";
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $val);
+    }
+
+    /**
+     * Cude.
+     * @throws Exception
+     */
+    private function cude(): void
+    {
+        $baseString = $this->buildInvoiceHashString();
+        $profileId = $this->getTag('ProfileExecutionID', 0)->nodeValue;
+        $cudeString = "{$baseString}{$this->pin}{$profileId}";
+        
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $cudeString);
+    }
+
+    /**
+     * Obtiene los datos de las partes involucradas en un evento (Sender y Receiver).
+     * 
+     * @return array Array con las claves 'sender' y 'receiver'
+     * @throws Exception
+     */
+    private function getEventPartyIdentifications(): array
+    {
+        return [
+            'sender' => $this->getQuery("cac:SenderParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue,
+            'receiver' => $this->getQuery("cac:ReceiverParty/cac:PartyTaxScheme/cbc:CompanyID")->nodeValue,
+        ];
+    }
+
+    /**
+     * Obtiene los datos de respuesta del documento para eventos.
+     * 
+     * @return array Array con las claves 'responseCode', 'documentId', 'documentTypeCode'
+     * @throws Exception
+     */
+    private function getDocumentResponseData(): array
+    {
+        return [
+            'responseCode' => $this->getQuery("cac:DocumentResponse/cac:Response/cbc:ResponseCode")->nodeValue,
+            'documentId' => $this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:ID")->nodeValue,
+            'documentTypeCode' => $this->getQuery("cac:DocumentResponse/cac:DocumentReference/cbc:DocumentTypeCode")->nodeValue,
+        ];
+    }
+
+    /**
+     * Construye la cadena para CUDE de eventos.
+     * 
+     * @return string Cadena construida con los valores del evento
+     * @throws Exception
+     */
+    private function buildEventHashString(): string
+    {
+        $basic = $this->getBasicDocumentData();
+        $parties = $this->getEventPartyIdentifications();
+        $docResponse = $this->getDocumentResponseData();
+        
+        return "{$basic['id']}{$basic['date']}{$basic['time']}{$parties['sender']}{$parties['receiver']}{$docResponse['responseCode']}{$docResponse['documentId']}{$docResponse['documentTypeCode']}{$this->pin}";
+    }
+
+    /**
+     * Cude Event.
+     * @throws Exception
+     */
+    private function cudeevent(): void
+    {
+        $this->getTag('UUID', 0)->nodeValue = hash('sha384', $this->buildEventHashString());
+        $this->getTag('QRCode', 0)->nodeValue = str_replace('-----CUFECUDE-----', $this->ConsultarCUFEEVENT(), $this->getTag('QRCode', 0)->nodeValue);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function ConsultarCUDEEVENT(): string
+    {
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del CUDE');
+        return $this->getTag('UUID', 0)->nodeValue = hash('sha384', $this->buildEventHashString());
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function ConsultarCUFEEVENT()
+    {
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del CUFE');
+        if(strpos($this->xmlString, '</ApplicationResponse>') && strpos($this->xmlString, '</AttachedDocument>') === false)
+            return $this->getQuery('cac:DocumentResponse/cac:DocumentReference/cbc:UUID')->nodeValue;
+        return $this->getTag('UUID', 0)->nodeValue;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function getUUID()
+    {
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del UUID');
+        return $this->getTag('UUID', 0)->nodeValue;
+    }
+
+    /**
+     * Obtiene la información del QRCode
+     * @throws Exception
+     */
+    public function getQRData(): string
+    {
+
+        if (is_null($this->pin))
+            throw new Exception('El pin es requerido para la generación del QRCode');
+        
+        // Obtener datos básicos del documento
+        $basic = $this->getBasicDocumentData();
+        $NumFac = $basic['id'];
+        $FecFac = $basic['date'];
+        $HorFac = $basic['time'];
+        
+        // Obtener identificaciones de las partes
+        $parties = $this->getPartyIdentifications();
+        $NitFac = $parties['supplier'];
+        $DocAdq = $parties['customer'];
+        
+        // Obtener valores monetarios
+        $ValFac = $this->getLineExtensionAmount();
+        $ValIva = $this->getTaxAmount('01');
+        
+        // Calcular otros impuestos
+        $otherTaxList = ['02', '03', '04', '08', '20', '21', '22', '23', '24', '25', '26', 'ZZ', '30', '32', '33', '34', '35', '36'];
+        $ValOtroIm = 0;
+        foreach ($otherTaxList as $tax) {
+            $ValOtroIm += (float)($this->getQuery("cac:TaxTotal[cac:TaxSubtotal/cac:TaxCategory/cac:TaxScheme/cbc:ID={$tax}]/cbc:TaxAmount", false)->nodeValue ?? '0.00');
+        }
+        $ValOtroIm = $this->truncateDecimals($ValOtroIm, 2);
+        
+        $ValTolFac = $this->getPayableAmount();
+        $CUFE = $this->getTag('UUID', 0)->nodeValue;
+        $QRCode = $this->getTag('QRCode', 0)->nodeValue;
+        
+         // Ejemplo
+         /**
+          * NumFac: 323200000129
+          * FecFac: 2019-16-01
+          * HorFac: 10:53:10-05:00
+          * NitFac: 700085371
+          * DocAdq: 800199436
+          * ValFac: 1500000.00
+          * ValIva: 285000.00
+          * ValOtroIm: 0.00
+          * ValTolFac: 1785000.00
+          * CUFE: e5bac48e354bc907bccff0ea7d45fbf784f0a8e7243b58337361e1fbd430489d
+          * https://catalogo-vpfe.dian.gov.co/document/searchqr?documentkey=e5bac48e354bc907bccff0ea7d45fbf784f0a8e7243b58337361e1fbd430489d
+          */
+        return "NumFac: {$NumFac}\nFecFac: {$FecFac}\nHorFac: {$HorFac}\nNitFac: {$NitFac}\nDocAdq: {$DocAdq}\nValFac: {$ValFac}\nValIva: {$ValIva}\nValOtroIm: {$ValOtroIm}\nValTolFac: {$ValTolFac}\nCUFE: {$CUFE}\n{$QRCode}";
+    }
+}
