@@ -4,6 +4,33 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Version 3.6.9 (2026-07-11)
+
+**🐛 FIX**: Corregida generación de `<ds:X509SerialNumber>` para soportar certificados con números de serie largos de FIMA Digital.
+
+#### Fixed
+
+- **Signature**: La conversión de números de serie de certificados X.509 ahora usa `bcmath` para precisión arbitraria, soportando seriales de 16-20+ bytes sin corrupción. Esto resuelve rechazos de firma de la DIAN al usar certificados del nuevo proveedor FIMA Digital.
+  - Problema: `openssl_x509_parse()['serialNumber']` pierde precisión con seriales grandes.
+  - Solución: Nuevo método `hexToDecimal()` que convierte `serialNumberHex` a decimal con precisión arbitraria.
+
+#### Changed
+
+- Actualización de 4 clases de firma (`SignInvoice`, `SignDocumentSupport`, `SignPayroll`, `SignAttachedDocument`) para usar conversión confiable de seriales.
+- Agregada dependencia `ext-bcmath` en `composer.json`.
+
+#### Added
+
+- Método protegido `hexToDecimal()` en `DIANTrait`.
+- Test unitario `HexToDecimalTest.php` con cobertura completa para seriales de cualquier tamaño.
+
+#### Technical Details
+
+- Compatible PHP 8.1+ y agnóstico a Laravel (código PHP puro).
+- Futureproof: soporta certificados con seriales de cualquier tamaño sin límites prácticos.
+
+---
+
 ### Version 3.6.8 (2026-02-24)
 
 **🔄 CHANGE**: Fallback automático al endpoint de producción cuando `To` está vacío.

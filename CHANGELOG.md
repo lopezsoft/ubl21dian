@@ -5,6 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.6.9] - 2026-07-11
+
+### Fixed
+
+- **Signature**: Corregida generación de `<ds:X509SerialNumber>` para soportar certificados con números de serie largos. El cambio de proveedor de certificados (FIMA Digital) genera seriales de 16-20+ bytes que causaban pérdida de precisión en `openssl_x509_parse()['serialNumber']`, siendo rechazados por la DIAN.
+  - Problema: PHP's OpenSSL no usa aritmética de precisión arbitraria para la conversión hex→decimal del serial, resultando en valores corruptos para números grandes.
+  - Solución: Nuevo método `hexToDecimal()` en `DIANTrait` que convierte `serialNumberHex` (siempre fiel) a decimal usando `bcmath` (precisión arbitraria), soportando seriales de cualquier tamaño.
+
+### Changed
+
+- Actualización de 4 clases de firma (`SignInvoice`, `SignDocumentSupport`, `SignPayroll`, `SignAttachedDocument`) para usar `hexToDecimal(serialNumberHex)` en lugar de confiar en `serialNumber` nativo.
+- Agregada dependencia `ext-bcmath` en `composer.json`.
+
+### Added
+
+- Método protegido `hexToDecimal(string $hex): string` en `DIANTrait` para conversión confiable de números hexadecimales a decimales con precisión arbitraria.
+- Test unitario `HexToDecimalTest.php` con cobertura de casos edge: seriales pequeños, grandes (16+ bytes), leading zeros, case-insensitivity, y valores realistas de proveedores como FIMA Digital.
+
+### Technical Details
+
+- Compatible PHP 8.1+ y agnóstico a Laravel (código PHP puro).
+- `bcmath` es extensión estándar en la mayoría de entornos (Homestead, Sail, Forge, distros Linux).
+- Evita duplicación: método centralizado reutilizado por 4 clases de firma.
+- Futureproof: soporta certificados con seriales de cualquier tamaño (sin límites prácticos).
+
 ## [3.6.8] - 2026-02-24
 
 ### Changed
