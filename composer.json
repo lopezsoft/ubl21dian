@@ -33,6 +33,7 @@
         "ext-libxml": "*",
         "ext-openssl": "*",
         "ext-xmlwriter": "*",
+        "ext-bcmath": "*",
         "nesbot/carbon": "^2.19 || ^3.8",
         "ext-json": "*"
     },

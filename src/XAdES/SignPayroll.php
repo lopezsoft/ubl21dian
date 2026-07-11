@@ -274,7 +274,7 @@ class SignPayroll extends Sign
         $this->X509IssuerNameCert = $this->domDocument->createElement('ds:X509IssuerName', $this->joinArray(array_reverse(openssl_x509_parse($this->certs['cert'])['issuer']), false, ','));
         $this->issuerSerialCert->appendChild($this->X509IssuerNameCert);
 
-        $this->X509SerialNumberCert = $this->domDocument->createElement('ds:X509SerialNumber', openssl_x509_parse($this->certs['cert'])['serialNumber']);
+        $this->X509SerialNumberCert = $this->domDocument->createElement('ds:X509SerialNumber', $this->hexToDecimal(openssl_x509_parse($this->certs['cert'])['serialNumberHex']));
         $this->issuerSerialCert->appendChild($this->X509SerialNumberCert);
 
         $this->signaturePolicyIdentifier = $this->domDocument->createElement('xades:SignaturePolicyIdentifier');

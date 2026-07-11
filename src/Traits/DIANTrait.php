@@ -145,6 +145,27 @@ trait DIANTrait
     }
 
     /**
+     * Converts a hexadecimal string to a decimal string using bcmath.
+     * This is necessary for X.509 certificate serial numbers that exceed PHP's integer/float precision.
+     * Uses bcmath for arbitrary-precision arithmetic to handle large serials from modern CAs.
+     *
+     * @param string $hex Hexadecimal string (without '0x' prefix)
+     * @return string Decimal representation as a string
+     */
+    protected function hexToDecimal(string $hex): string
+    {
+        $hex = strtoupper(ltrim($hex, '0') ?: '0');
+        $decimal = '0';
+
+        foreach (str_split($hex) as $char) {
+            $decimal = bcmul($decimal, '16', 0);
+            $decimal = bcadd($decimal, (string)hexdec($char), 0);
+        }
+
+        return $decimal;
+    }
+
+    /**
      * Join array.
      *
      * @param array  $array
