@@ -22,6 +22,22 @@ class Template extends SOAP
     public string|null $testSetId = null;
 
     /**
+     * Ruta a un CA bundle PEM (o directorio) para verificar el TLS de la DIAN.
+     * null = Client::configureSsl() / UBL21DIAN_CA_BUNDLE / CA del sistema.
+     *
+     * @var string|null
+     */
+    public ?string $caBundle = null;
+
+    /**
+     * Verificación TLS. null = Client::configureSsl() / UBL21DIAN_SSL_VERIFY (activa por defecto).
+     * false desactiva explícitamente la verificación (solo entornos controlados).
+     *
+     * @var bool|null
+     */
+    public ?bool $sslVerify = null;
+
+    /**
      * Template.
      *
      * @var string

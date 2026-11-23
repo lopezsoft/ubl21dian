@@ -4,6 +4,22 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
+### Unreleased
+
+**🔒 SECURITY (CERT-02)**: Verificación TLS activa por defecto en `Client` al consumir los servicios web de la DIAN.
+
+#### Changed
+
+- **Client**: `CURLOPT_SSL_VERIFYPEER=true` y `CURLOPT_SSL_VERIFYHOST=2` por defecto (antes ambos desactivados). Ver [Verificación TLS](#verificación-tls).
+
+#### Added
+
+- CA bundle configurable (`UBL21DIAN_CA_BUNDLE`, `Client::configureSsl()`, `$template->caBundle` o argumento del constructor) y opt-out explícito con `UBL21DIAN_SSL_VERIFY=false`.
+- `Lopezsoft\UBL21dian\Exceptions\SslCertificateException` (extiende `Exception`) para los errores de certificado de cURL (60, 77 y 51 en libcurl antiguo), con un mensaje que explica cómo configurar el CA bundle.
+- Test unitario `ClientSslTest.php` (sin red).
+
+---
+
 ### Version 3.6.9 (2026-07-11)
 
 **🐛 FIX**: Corregida generación de `<ds:X509SerialNumber>` para soportar certificados con números de serie largos de FIMA Digital.
@@ -223,7 +239,45 @@ substr() = "33000.00" → CUFE correcto
 
 ---
 
+# Verificación TLS
+
+Desde la versión Unreleased (CERT-02), `Client` verifica el certificado TLS del servidor de la DIAN (`CURLOPT_SSL_VERIFYPEER=true`, `CURLOPT_SSL_VERIFYHOST=2`). Si no se configura nada, cURL usa el CA del sistema o las directivas `curl.cainfo` / `openssl.cafile` de `php.ini`.
+
+Cuando el entorno no tiene CA bundle (frecuente en Windows/WAMP), configure uno. Cada opción se resuelve en este orden:
+
+1. Argumento del constructor: `new Client($template, '/ruta/cacert.pem')`.
+2. Propiedades del template: `$template->caBundle = '/ruta/cacert.pem';` y `$template->sslVerify`.
+3. Configuración global: `Client::configureSsl(caBundle: '/ruta/cacert.pem');` (por ejemplo, en el `AppServiceProvider` de Laravel con un valor de `config()`, útil con `php artisan config:cache`, donde `.env` no llega a `getenv()`).
+4. Variables de entorno: `UBL21DIAN_CA_BUNDLE=/ruta/cacert.pem` (un archivo PEM o un directorio de certificados, que se usa como `CURLOPT_CAPATH`).
+
+Si la ruta configurada no existe o no es legible, `Client` lanza `SslCertificateException` antes de conectar. No vuelve en silencio a la conexión sin verificar.
+
+Un bundle actualizado se descarga de <https://curl.se/docs/caextract.html>.
+
+```php
+use Lopezsoft\UBL21dian\Client;
+use Lopezsoft\UBL21dian\Exceptions\SslCertificateException;
+
+Client::configureSsl(caBundle: '/etc/ssl/certs/cacert.pem');
+
+try {
+    $response = $getStatus->signToSend()->getResponseToObject();
+} catch (SslCertificateException $e) {
+    // $e->getCurlErrno(): 60 (CA desconocida), 77 (CA bundle ilegible), 51 (libcurl antiguo), 0 (ruta inválida)
+}
+```
+
+## Desactivar la verificación (no recomendado)
+
+La verificación solo se desactiva con un opt-out explícito, para entornos controlados (por ejemplo, desarrollo local sin CA bundle):
+
+- La variable de entorno `UBL21DIAN_SSL_VERIFY=false` (no distingue mayúsculas). Cualquier otro valor, como `0`, `no` u `off`, mantiene la verificación activa.
+- O en código: `Client::configureSsl(verifySsl: false)`, `$template->sslVerify = false` o `new Client($template, null, false)`.
+
+Un valor explícito en código tiene prioridad sobre la variable de entorno. Por ejemplo, `$template->sslVerify = true` vuelve a activar la verificación aunque `UBL21DIAN_SSL_VERIFY=false`.
+
 # Tags
+* **Unreleased**: Security - Verificación TLS activa por defecto en Client, CA bundle configurable y SslCertificateException (CERT-02).
 * **3.6.8**: Change - Fallback automático al endpoint de producción DIAN cuando To está vacío.
 * **3.6.7**: Fix - Validación de URL vacía en Client antes de ejecutar cURL. Excepción descriptiva cuando To está vacío.
 * **3.6.6**: Fix - Mensaje de error cURL enriquecido con errno y URL cuando curl_error() está vacío.

@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Security
+
+- **Client (CERT-02)**: La verificación TLS queda activa por defecto (`CURLOPT_SSL_VERIFYPEER=true`, `CURLOPT_SSL_VERIFYHOST=2`). Antes ambas opciones estaban desactivadas, lo que exponía las peticiones SOAP firmadas a ataques de intermediario.
+
+### Added
+
+- CA bundle configurable con este orden de precedencia: argumento `new Client($template, $caBundle, $verifySsl)`, propiedades `Template::$caBundle` / `Template::$sslVerify`, `Client::configureSsl()` y las variables de entorno `UBL21DIAN_CA_BUNDLE` (archivo PEM → `CURLOPT_CAINFO`, directorio → `CURLOPT_CAPATH`) y `UBL21DIAN_SSL_VERIFY`.
+- Opt-out explícito: la verificación solo se desactiva con `UBL21DIAN_SSL_VERIFY=false` o con `false` explícito en código.
+- `Lopezsoft\UBL21dian\Exceptions\SslCertificateException` (extiende `Exception`, así que los `catch (Exception)` existentes siguen funcionando). Se lanza en dos casos:
+  - Si cURL falla con un error de certificado (60 `CURLE_PEER_FAILED_VERIFICATION`/`CURLE_SSL_CACERT`, 77 `CURLE_SSL_CACERT_BADFILE`, o 51 en libcurl < 7.62). El mensaje indica cómo configurar el CA bundle.
+  - Si el CA bundle configurado no existe o no es legible. La excepción se lanza antes de conectar.
+- Métodos estáticos públicos `Client::resolveSslOptions()`, `Client::isCertificateError()` y `Client::certificateErrorMessage()`.
+- Test unitario `tests/ClientSslTest.php`, que no usa la red.
+
+### Compatibility
+
+- La firma del constructor de `Client` solo añade parámetros opcionales, así que `signToSend()` y `new Client($template)` no cambian.
+- **Acción requerida** en entornos sin CA del sistema (Windows/WAMP sin `curl.cainfo`): configure `UBL21DIAN_CA_BUNDLE`, `curl.cainfo` o `Client::configureSsl()`. De lo contrario, las llamadas a la DIAN fallarán con `SslCertificateException`.
+
 ## [3.6.9] - 2026-07-11
 
 ### Fixed
