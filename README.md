@@ -4,7 +4,7 @@ Core for electronic invoicing pre-validation - DIAN UBL 2.1.
 
 ## Latest Release
 
-### Unreleased
+### Version 3.7.0 (2026-11-23)
 
 **🔒 SECURITY (CERT-02)**: Verificación TLS activa por defecto en `Client` al consumir los servicios web de la DIAN.
 
@@ -241,7 +241,7 @@ substr() = "33000.00" → CUFE correcto
 
 # Verificación TLS
 
-Desde la versión Unreleased (CERT-02), `Client` verifica el certificado TLS del servidor de la DIAN (`CURLOPT_SSL_VERIFYPEER=true`, `CURLOPT_SSL_VERIFYHOST=2`). Si no se configura nada, cURL usa el CA del sistema o las directivas `curl.cainfo` / `openssl.cafile` de `php.ini`.
+Desde la versión 3.7.0 (CERT-02), `Client` verifica el certificado TLS del servidor de la DIAN (`CURLOPT_SSL_VERIFYPEER=true`, `CURLOPT_SSL_VERIFYHOST=2`). Si no se configura nada, cURL usa el CA del sistema o las directivas `curl.cainfo` / `openssl.cafile` de `php.ini`.
 
 Cuando el entorno no tiene CA bundle (frecuente en Windows/WAMP), configure uno. Cada opción se resuelve en este orden:
 
@@ -277,7 +277,7 @@ La verificación solo se desactiva con un opt-out explícito, para entornos cont
 Un valor explícito en código tiene prioridad sobre la variable de entorno. Por ejemplo, `$template->sslVerify = true` vuelve a activar la verificación aunque `UBL21DIAN_SSL_VERIFY=false`.
 
 # Tags
-* **Unreleased**: Security - Verificación TLS activa por defecto en Client, CA bundle configurable y SslCertificateException (CERT-02).
+* **3.7.0**: Security - Verificación TLS activa por defecto en Client, CA bundle configurable y SslCertificateException (CERT-02).
 * **3.6.8**: Change - Fallback automático al endpoint de producción DIAN cuando To está vacío.
 * **3.6.7**: Fix - Validación de URL vacía en Client antes de ejecutar cURL. Excepción descriptiva cuando To está vacío.
 * **3.6.6**: Fix - Mensaje de error cURL enriquecido con errno y URL cuando curl_error() está vacío.

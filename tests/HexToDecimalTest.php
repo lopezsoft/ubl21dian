@@ -36,9 +36,9 @@ class HexToDecimalTest extends TestCase
     public function testLargeHexConversion()
     {
         // A realistic 16-byte (128-bit) serial number in hex
-        // '8A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D' = 183767632641365435945667820180815885149 in decimal
+        // '8A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D' = 183574552716694486419176225249280347229 in decimal
         $largeHex = '8A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D';
-        $expected = '183767632641365435945667820180815885149';
+        $expected = '183574552716694486419176225249280347229';
         $this->assertEquals($expected, $this->hexToDecimal($largeHex));
     }
 
@@ -67,7 +67,7 @@ class HexToDecimalTest extends TestCase
      */
     public function testCaseInsensitivity()
     {
-        $this->assertEquals('183767632641365435945667820180815885149', $this->hexToDecimal('8a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d'));
+        $this->assertEquals('183574552716694486419176225249280347229', $this->hexToDecimal('8a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d'));
         $this->assertEquals('26', $this->hexToDecimal('1a'));
     }
 
@@ -81,7 +81,7 @@ class HexToDecimalTest extends TestCase
         // Example: a 20-byte (160-bit) serial from FIMA Digital or similar modern CA
         $longSerial = 'A1B2C3D4E5F6A7B8C9D0E1F2A3B4C5D6E7F8A9B';
         // Pre-calculated decimal value for this hex
-        $expectedDecimal = '1233355663331854029813896866325024070996097947';
+        $expectedDecimal = '57695881630579313292035618348247029057966803611';
         $this->assertEquals($expectedDecimal, $this->hexToDecimal($longSerial));
     }
 }
